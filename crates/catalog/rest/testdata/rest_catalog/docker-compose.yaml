@@ -20,7 +20,7 @@ networks:
 
 services:
   rest:
-    image: tabulario/iceberg-rest:0.10.0
+    image: apache/iceberg-rest-adapter
     environment:
       - AWS_ACCESS_KEY_ID=admin
       - AWS_SECRET_ACCESS_KEY=password
