@@ -39,6 +39,31 @@ permissions:
   contents: read
 
 jobs:
+  cargo-build:
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      matrix:
+        include:
+          - { os: windows-latest }
+          - { os: macos-latest, target: "universal2-apple-darwin" }
+          - { os: macos-latest, target: "aarch64-apple-darwin" }
+          - { os: macos-latest } # platform's default target
+          - { os: ubuntu-latest, target: "x86_64" }
+          - { os: ubuntu-latest, target: "aarch64" }
+          - { os: ubuntu-latest, target: "armv7l" }
+    steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-python@v5
+          with:
+            python-version: 3.9
+        - name: Setup Rust toolchain
+          uses: ./.github/actions/setup-builder
+          with:
+            rust-version: ${{ env.rust_msrv }}
+        - name: Install Rust dependencies
+          run: cargo fetch
+        - name: Build with Cargo
+          run: cargo build --target ${{ matrix.target }}
   sdist:
     runs-on: ubuntu-latest
     steps:
