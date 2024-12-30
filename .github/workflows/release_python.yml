@@ -63,7 +63,12 @@ jobs:
         - name: Install Rust dependencies
           run: cargo fetch
         - name: Build with Cargo
-          run: cargo build --target ${{ matrix.target }}
+          run: |
+            if [ -z "${{ matrix.target }}" ]; then
+              cargo build
+            else
+              cargo build --target ${{ matrix.target }}
+            fi
   sdist:
     runs-on: ubuntu-latest
     steps:
