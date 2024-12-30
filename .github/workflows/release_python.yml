@@ -64,6 +64,7 @@ jobs:
         - name: Install Rust dependencies
           run: cargo fetch
         - name: Build with Cargo
+          working-directory: bindings/python
           run: |
             if [ -z "${{ matrix.target }}" ]; then
               cargo build
