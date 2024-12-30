@@ -44,13 +44,14 @@ jobs:
     strategy:
       matrix:
         include:
-          - { os: windows-latest }
+          # - { os: windows-latest }
           - { os: macos-latest, target: "universal2-apple-darwin" }
           - { os: macos-latest, target: "aarch64-apple-darwin" }
+          - { os: macos-latest, target: "x86_64-apple-darwin" }
           - { os: macos-latest } # platform's default target
-          - { os: ubuntu-latest, target: "x86_64" }
-          - { os: ubuntu-latest, target: "aarch64" }
-          - { os: ubuntu-latest, target: "armv7l" }
+          # - { os: ubuntu-latest, target: "x86_64" }
+          # - { os: ubuntu-latest, target: "aarch64" }
+          # - { os: ubuntu-latest, target: "armv7l" }
     steps:
         - uses: actions/checkout@v4
         - uses: actions/setup-python@v5
