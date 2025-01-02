@@ -35,6 +35,8 @@ datafusion = { version = "43" }
 futures = { workspace = true }
 iceberg = { workspace = true }
 tokio = { workspace = true }
+pyo3 = { version = "0.22.4", features = ["extension-module", "abi3"] }
+arrow = { version = "53.3.0", features = ["pyarrow"] }
 
 [dev-dependencies]
 iceberg-catalog-memory = { workspace = true }
