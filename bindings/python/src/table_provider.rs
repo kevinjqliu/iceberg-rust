@@ -32,6 +32,7 @@ use tokio::runtime::Runtime;
 #[derive(Clone)]
 pub struct PyIcebergTableProvider {
     inner: IcebergTableProvider,
+    runtime: Arc<Runtime>,
 }
 
 #[pymethods]
@@ -82,7 +83,10 @@ impl PyIcebergTableProvider {
                 })
         })?;
 
-        Ok(PyIcebergTableProvider { inner: provider })
+        Ok(PyIcebergTableProvider { 
+            inner: provider,
+            runtime: Arc::new(runtime),
+        })
     }
 
     /// Expose as a DataFusion table provider
@@ -91,7 +95,7 @@ impl PyIcebergTableProvider {
         py: Python<'py>,
     ) -> PyResult<Bound<'py, PyCapsule>> {        
         let name = CString::new("datafusion_table_provider").unwrap();
-        let provider = FFI_TableProvider::new(Arc::new(self.inner.clone()), false);
+        let provider = FFI_TableProvider::new(Arc::new(self.inner.clone()), false, Some(self.runtime.clone()));
         PyCapsule::new_bound(py, provider, Some(name.clone()))
     }
 }

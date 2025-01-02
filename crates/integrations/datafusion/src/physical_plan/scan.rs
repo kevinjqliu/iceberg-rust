@@ -27,8 +27,9 @@ use datafusion::execution::{SendableRecordBatchStream, TaskContext};
 use datafusion::physical_expr::EquivalenceProperties;
 use datafusion::physical_plan::stream::RecordBatchStreamAdapter;
 use datafusion::physical_plan::{
-    DisplayAs, ExecutionMode, ExecutionPlan, Partitioning, PlanProperties,
+    DisplayAs, ExecutionPlan, Partitioning, PlanProperties,
 };
+use datafusion::physical_plan::execution_plan::{Boundedness, EmissionType};
 use datafusion::prelude::Expr;
 use futures::{Stream, TryStreamExt};
 use iceberg::expr::Predicate;
@@ -88,7 +89,8 @@ impl IcebergTableScan {
         PlanProperties::new(
             EquivalenceProperties::new(schema),
             Partitioning::UnknownPartitioning(1),
-            ExecutionMode::Bounded,
+            EmissionType::Incremental,
+            Boundedness::Bounded,
         )
     }
 }
