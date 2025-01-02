@@ -32,5 +32,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 iceberg = { path = "../../crates/iceberg" }
-pyo3 = { version = "0.22.3", features = ["extension-module", "abi3-py39"] }
-arrow = { version = "53", features = ["pyarrow"] }
+pyo3 = { version = "0.22.4", features = ["extension-module", "abi3-py39"] }
+arrow = { version = "53.3.0", features = ["pyarrow"] }
+iceberg-datafusion = { path = "../../crates/integrations/datafusion" }
+tokio = { version = "1", features = ["full"] }
+datafusion-ffi = { version = "43" }
