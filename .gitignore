@@ -21,6 +21,7 @@ target
 **/.DS_Store
 dist/*
 **/venv
+**/.venv
 *.so
 *.pyc
 *.whl
