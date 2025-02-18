@@ -15,14 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-mod catalog;
-pub use catalog::*;
+use std::sync::{Arc, OnceLock};
 
-mod error;
-pub use error::*;
+use ctor::dtor;
+use iceberg_integration_tests::{set_test_fixture, TestFixture};
 
-mod physical_plan;
-mod schema;
-pub mod table;
-pub use table::table_provider_factory::IcebergTableProviderFactory;
-pub use table::*;
+pub mod shared_tests;
+
+static DOCKER_CONTAINERS: OnceLock<Arc<TestFixture>> = OnceLock::new();
+
+pub fn get_shared_containers() -> &'static Arc<TestFixture> {
+    DOCKER_CONTAINERS.get_or_init(|| Arc::new(set_test_fixture("shared_tests")))
+}
+
+#[dtor]
+fn shutdown() {
+    if let Some(fixture) = DOCKER_CONTAINERS.get() {
+        fixture._docker_compose.down()
+    }
+}
