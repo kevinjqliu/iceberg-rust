@@ -25,17 +25,15 @@ import pyarrow as pa
 
 
 # To run build locally (until the PR is merged):
-# - in `datafision`, fetch the latest changes from `feat/ffi_enter_tokio_runtime` branch
-# - in `datafusion-python`, change package to reference latest datafusion* repos and build locally
-#     - `uv run --no-project maturin build`
-#     - check target `ll target/wheels/datafusion-43.0.0-cp38-abi3-macosx_11_0_arm64.whl`
+# - use `datafusion` >=45
+# - use `datafusion-python` >=45 (`pip install -i https://test.pypi.org/simple/ datafusion`)
 # - in `iceberg-rust`, build `bindings/python` and run tests
 #     - `cd bindings/python`
 #     - `hatch run dev:develop`
 #     - `hatch run dev:test`
 def test_iceberg_table_provider():
     import datafusion
-    assert datafusion.__version__ > '43'
+    assert datafusion.__version__ >= '45'
     with tempfile.TemporaryDirectory() as temp_dir:
         catalog = SqlCatalog(
             "default",
