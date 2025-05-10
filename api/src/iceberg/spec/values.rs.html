@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `crates/iceberg/src/spec/values.rs`."><title>values.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="iceberg" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (a70b2ae57 2024-06-09)" data-channel="nightly" data-search-js="search-0fe7219eb170c82e.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `crates/iceberg/src/spec/values.rs`."><title>values.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="iceberg" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (b19329a37 2024-11-21)" data-channel="nightly" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">iceberg/spec/</div>values.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -3814,32 +3815,7 @@
 <a href="#3814" id="3814">3814</a>
 <a href="#3815" id="3815">3815</a>
 <a href="#3816" id="3816">3816</a>
-<a href="#3817" id="3817">3817</a>
-<a href="#3818" id="3818">3818</a>
-<a href="#3819" id="3819">3819</a>
-<a href="#3820" id="3820">3820</a>
-<a href="#3821" id="3821">3821</a>
-<a href="#3822" id="3822">3822</a>
-<a href="#3823" id="3823">3823</a>
-<a href="#3824" id="3824">3824</a>
-<a href="#3825" id="3825">3825</a>
-<a href="#3826" id="3826">3826</a>
-<a href="#3827" id="3827">3827</a>
-<a href="#3828" id="3828">3828</a>
-<a href="#3829" id="3829">3829</a>
-<a href="#3830" id="3830">3830</a>
-<a href="#3831" id="3831">3831</a>
-<a href="#3832" id="3832">3832</a>
-<a href="#3833" id="3833">3833</a>
-<a href="#3834" id="3834">3834</a>
-<a href="#3835" id="3835">3835</a>
-<a href="#3836" id="3836">3836</a>
-<a href="#3837" id="3837">3837</a>
-<a href="#3838" id="3838">3838</a>
-<a href="#3839" id="3839">3839</a>
-<a href="#3840" id="3840">3840</a>
-<a href="#3841" id="3841">3841</a>
-</pre></div><pre class="rust"><code><span class="comment">// Licensed to the Apache Software Foundation (ASF) under one
+<a href="#3817" id="3817">3817</a></pre></div><pre class="rust"><code><span class="comment">// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -3868,7 +3844,6 @@
 <span class="kw">use </span>std::str::FromStr;
 
 <span class="kw">pub use </span>_serde::RawLiteral;
-<span class="kw">use </span>bitvec::vec::BitVec;
 <span class="kw">use </span>chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 <span class="kw">use </span>num_bigint::BigInt;
 <span class="kw">use </span>ordered_float::OrderedFloat;
@@ -3902,7 +3877,7 @@
 <span class="kw">const </span>LONG_MIN: i64 = -<span class="number">9223372036854775808</span>;
 
 <span class="doccomment">/// Values present in iceberg type
-</span><span class="attr">#[derive(Clone, Debug, PartialEq, Hash, Eq)]
+</span><span class="attr">#[derive(Clone, Debug, PartialOrd, PartialEq, Hash, Eq)]
 </span><span class="kw">pub enum </span>PrimitiveLiteral {
     <span class="doccomment">/// 0x00 for false, non-zero byte for true
     </span>Boolean(bool),
@@ -4980,9 +4955,9 @@
     }
 
     <span class="kw">fn </span>string_to_i128&lt;S: AsRef&lt;str&gt;&gt;(s: S) -&gt; <span class="prelude-ty">Result</span>&lt;i128&gt; {
-        <span class="kw">return </span>s.as_ref().parse::&lt;i128&gt;().map_err(|e| {
+        s.as_ref().parse::&lt;i128&gt;().map_err(|e| {
             Error::new(ErrorKind::DataInvalid, <span class="string">"Can't parse string to i128."</span>).with_source(e)
-        });
+        })
     }
 
     <span class="doccomment">/// Convert the datum to `target_type`.
@@ -5069,6 +5044,22 @@
 /// It used in Literal::Map, to make it hashable, the order of key-value pairs is stored in a separate vector
 /// so that we can hash the map in a deterministic way. But it also means that the order of key-value pairs is matter
 /// for the hash value.
+///
+/// When converting to Arrow (e.g., for Iceberg), the map should be represented using
+/// the default field name "key_value".
+///
+/// Example:
+///
+/// ```text
+/// let key_value_field = Field::new(
+///     DEFAULT_MAP_FIELD_NAME,
+///     arrow_schema::DataType::Struct(vec![
+///         Arc::new(key_field.clone()),
+///         Arc::new(value_field.clone()),
+///     ].into()),
+///     false
+/// );
+/// '''
 </span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>Map {
     index: HashMap&lt;Literal, usize&gt;,
@@ -5405,6 +5396,16 @@
         <span class="self">Self</span>::Primitive(PrimitiveLiteral::Long(value))
     }
 
+    <span class="doccomment">/// Creates a timestamp from unix epoch in nanoseconds.
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>timestamp_nano(value: i64) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::Primitive(PrimitiveLiteral::Long(value))
+    }
+
+    <span class="doccomment">/// Creates a timestamp with timezone from unix epoch in nanoseconds.
+    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>timestamptz_nano(value: i64) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::Primitive(PrimitiveLiteral::Long(value))
+    }
+
     <span class="doccomment">/// Creates a timestamp from [`DateTime`].
     </span><span class="kw">pub fn </span>timestamp_from_datetime&lt;T: TimeZone&gt;(dt: DateTime&lt;T&gt;) -&gt; <span class="self">Self </span>{
         <span class="self">Self</span>::timestamp(dt.with_timezone(<span class="kw-2">&amp;</span>Utc).timestamp_micros())
@@ -5557,102 +5558,53 @@
 </span><span class="attr">#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 </span><span class="kw">pub struct </span>Struct {
     <span class="doccomment">/// Vector to store the field values
-    </span>fields: Vec&lt;Literal&gt;,
-    <span class="doccomment">/// Null bitmap
-    </span>null_bitmap: BitVec,
+    </span>fields: Vec&lt;<span class="prelude-ty">Option</span>&lt;Literal&gt;&gt;,
 }
 
 <span class="kw">impl </span>Struct {
     <span class="doccomment">/// Create a empty struct.
     </span><span class="kw">pub fn </span>empty() -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{
-            fields: Vec::new(),
-            null_bitmap: BitVec::new(),
-        }
+        <span class="self">Self </span>{ fields: Vec::new() }
     }
 
     <span class="doccomment">/// Create a iterator to read the field in order of field_value.
     </span><span class="kw">pub fn </span>iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw">impl </span>ExactSizeIterator&lt;Item = <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Literal&gt;&gt; {
-        <span class="self">self</span>.null_bitmap.iter().zip(<span class="self">self</span>.fields.iter()).map(
-            |(null, value)| {
-                <span class="kw">if </span><span class="kw-2">*</span>null {
-                    <span class="prelude-val">None
-                </span>} <span class="kw">else </span>{
-                    <span class="prelude-val">Some</span>(value)
-                }
-            },
-        )
+        <span class="self">self</span>.fields.iter().map(|field| field.as_ref())
     }
 
     <span class="doccomment">/// returns true if the field at position `index` is null
     </span><span class="kw">pub fn </span>is_null_at_index(<span class="kw-2">&amp;</span><span class="self">self</span>, index: usize) -&gt; bool {
-        <span class="self">self</span>.null_bitmap[index]
+        <span class="self">self</span>.fields[index].is_none()
     }
 
     <span class="doccomment">/// Return fields in the struct.
-    </span><span class="kw">pub fn </span>fields(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[Literal] {
+    </span><span class="kw">pub fn </span>fields(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[<span class="prelude-ty">Option</span>&lt;Literal&gt;] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.fields
     }
 }
 
 <span class="kw">impl </span>Index&lt;usize&gt; <span class="kw">for </span>Struct {
-    <span class="kw">type </span>Output = Literal;
+    <span class="kw">type </span>Output = <span class="prelude-ty">Option</span>&lt;Literal&gt;;
 
     <span class="kw">fn </span>index(<span class="kw-2">&amp;</span><span class="self">self</span>, idx: usize) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>::Output {
         <span class="kw-2">&amp;</span><span class="self">self</span>.fields[idx]
     }
 }
 
-<span class="doccomment">/// An iterator that moves out of a struct.
-</span><span class="kw">pub struct </span>StructValueIntoIter {
-    null_bitmap: bitvec::boxed::IntoIter,
-    fields: std::vec::IntoIter&lt;Literal&gt;,
-}
-
-<span class="kw">impl </span>Iterator <span class="kw">for </span>StructValueIntoIter {
-    <span class="kw">type </span>Item = <span class="prelude-ty">Option</span>&lt;Literal&gt;;
-
-    <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
-        <span class="kw">match </span>(<span class="self">self</span>.null_bitmap.next(), <span class="self">self</span>.fields.next()) {
-            (<span class="prelude-val">Some</span>(null), <span class="prelude-val">Some</span>(value)) =&gt; <span class="prelude-val">Some</span>(<span class="kw">if </span>null { <span class="prelude-val">None </span>} <span class="kw">else </span>{ <span class="prelude-val">Some</span>(value) }),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
-        }
-    }
-}
-
 <span class="kw">impl </span>IntoIterator <span class="kw">for </span>Struct {
     <span class="kw">type </span>Item = <span class="prelude-ty">Option</span>&lt;Literal&gt;;
 
-    <span class="kw">type </span>IntoIter = StructValueIntoIter;
+    <span class="kw">type </span>IntoIter = std::vec::IntoIter&lt;<span class="prelude-ty">Option</span>&lt;Literal&gt;&gt;;
 
     <span class="kw">fn </span>into_iter(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoIter {
-        StructValueIntoIter {
-            null_bitmap: <span class="self">self</span>.null_bitmap.into_iter(),
-            fields: <span class="self">self</span>.fields.into_iter(),
-        }
+        <span class="self">self</span>.fields.into_iter()
     }
 }
 
 <span class="kw">impl </span>FromIterator&lt;<span class="prelude-ty">Option</span>&lt;Literal&gt;&gt; <span class="kw">for </span>Struct {
     <span class="kw">fn </span>from_iter&lt;I: IntoIterator&lt;Item = <span class="prelude-ty">Option</span>&lt;Literal&gt;&gt;&gt;(iter: I) -&gt; <span class="self">Self </span>{
-        <span class="kw">let </span><span class="kw-2">mut </span>fields = Vec::new();
-        <span class="kw">let </span><span class="kw-2">mut </span>null_bitmap = BitVec::new();
-
-        <span class="kw">for </span>value <span class="kw">in </span>iter.into_iter() {
-            <span class="kw">match </span>value {
-                <span class="prelude-val">Some</span>(value) =&gt; {
-                    fields.push(value);
-                    null_bitmap.push(<span class="bool-val">false</span>)
-                }
-                <span class="prelude-val">None </span>=&gt; {
-                    fields.push(Literal::Primitive(PrimitiveLiteral::Boolean(<span class="bool-val">false</span>)));
-                    null_bitmap.push(<span class="bool-val">true</span>)
-                }
-            }
-        }
         Struct {
-            fields,
-            null_bitmap,
+            fields: iter.into_iter().collect(),
         }
     }
 }
@@ -7233,7 +7185,7 @@
             <span class="kw">match </span>(<span class="kw-2">&amp;</span>desered_literal, <span class="kw-2">&amp;</span>struct_literal) {
                 (Literal::Struct(desered), Literal::Struct(expected)) =&gt; {
                     <span class="kw">match </span>(<span class="kw-2">&amp;</span>desered.fields[<span class="number">0</span>], <span class="kw-2">&amp;</span>expected.fields[<span class="number">0</span>]) {
-                        (Literal::Map(desered), Literal::Map(expected)) =&gt; {
+                        (<span class="prelude-val">Some</span>(Literal::Map(desered)), <span class="prelude-val">Some</span>(Literal::Map(expected))) =&gt; {
                             <span class="macro">assert!</span>(desered.has_same_content(expected))
                         }
                         <span class="kw">_ </span>=&gt; {

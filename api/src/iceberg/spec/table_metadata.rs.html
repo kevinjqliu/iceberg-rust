@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `crates/iceberg/src/spec/table_metadata.rs`."><title>table_metadata.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="iceberg" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0-nightly (a70b2ae57 2024-06-09)" data-channel="nightly" data-search-js="search-0fe7219eb170c82e.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `crates/iceberg/src/spec/table_metadata.rs`."><title>table_metadata.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="iceberg" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (b19329a37 2024-11-21)" data-channel="nightly" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">iceberg/spec/</div>table_metadata.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -2775,7 +2776,222 @@
 <a href="#2775" id="2775">2775</a>
 <a href="#2776" id="2776">2776</a>
 <a href="#2777" id="2777">2777</a>
-</pre></div><pre class="rust"><code><span class="comment">// Licensed to the Apache Software Foundation (ASF) under one
+<a href="#2778" id="2778">2778</a>
+<a href="#2779" id="2779">2779</a>
+<a href="#2780" id="2780">2780</a>
+<a href="#2781" id="2781">2781</a>
+<a href="#2782" id="2782">2782</a>
+<a href="#2783" id="2783">2783</a>
+<a href="#2784" id="2784">2784</a>
+<a href="#2785" id="2785">2785</a>
+<a href="#2786" id="2786">2786</a>
+<a href="#2787" id="2787">2787</a>
+<a href="#2788" id="2788">2788</a>
+<a href="#2789" id="2789">2789</a>
+<a href="#2790" id="2790">2790</a>
+<a href="#2791" id="2791">2791</a>
+<a href="#2792" id="2792">2792</a>
+<a href="#2793" id="2793">2793</a>
+<a href="#2794" id="2794">2794</a>
+<a href="#2795" id="2795">2795</a>
+<a href="#2796" id="2796">2796</a>
+<a href="#2797" id="2797">2797</a>
+<a href="#2798" id="2798">2798</a>
+<a href="#2799" id="2799">2799</a>
+<a href="#2800" id="2800">2800</a>
+<a href="#2801" id="2801">2801</a>
+<a href="#2802" id="2802">2802</a>
+<a href="#2803" id="2803">2803</a>
+<a href="#2804" id="2804">2804</a>
+<a href="#2805" id="2805">2805</a>
+<a href="#2806" id="2806">2806</a>
+<a href="#2807" id="2807">2807</a>
+<a href="#2808" id="2808">2808</a>
+<a href="#2809" id="2809">2809</a>
+<a href="#2810" id="2810">2810</a>
+<a href="#2811" id="2811">2811</a>
+<a href="#2812" id="2812">2812</a>
+<a href="#2813" id="2813">2813</a>
+<a href="#2814" id="2814">2814</a>
+<a href="#2815" id="2815">2815</a>
+<a href="#2816" id="2816">2816</a>
+<a href="#2817" id="2817">2817</a>
+<a href="#2818" id="2818">2818</a>
+<a href="#2819" id="2819">2819</a>
+<a href="#2820" id="2820">2820</a>
+<a href="#2821" id="2821">2821</a>
+<a href="#2822" id="2822">2822</a>
+<a href="#2823" id="2823">2823</a>
+<a href="#2824" id="2824">2824</a>
+<a href="#2825" id="2825">2825</a>
+<a href="#2826" id="2826">2826</a>
+<a href="#2827" id="2827">2827</a>
+<a href="#2828" id="2828">2828</a>
+<a href="#2829" id="2829">2829</a>
+<a href="#2830" id="2830">2830</a>
+<a href="#2831" id="2831">2831</a>
+<a href="#2832" id="2832">2832</a>
+<a href="#2833" id="2833">2833</a>
+<a href="#2834" id="2834">2834</a>
+<a href="#2835" id="2835">2835</a>
+<a href="#2836" id="2836">2836</a>
+<a href="#2837" id="2837">2837</a>
+<a href="#2838" id="2838">2838</a>
+<a href="#2839" id="2839">2839</a>
+<a href="#2840" id="2840">2840</a>
+<a href="#2841" id="2841">2841</a>
+<a href="#2842" id="2842">2842</a>
+<a href="#2843" id="2843">2843</a>
+<a href="#2844" id="2844">2844</a>
+<a href="#2845" id="2845">2845</a>
+<a href="#2846" id="2846">2846</a>
+<a href="#2847" id="2847">2847</a>
+<a href="#2848" id="2848">2848</a>
+<a href="#2849" id="2849">2849</a>
+<a href="#2850" id="2850">2850</a>
+<a href="#2851" id="2851">2851</a>
+<a href="#2852" id="2852">2852</a>
+<a href="#2853" id="2853">2853</a>
+<a href="#2854" id="2854">2854</a>
+<a href="#2855" id="2855">2855</a>
+<a href="#2856" id="2856">2856</a>
+<a href="#2857" id="2857">2857</a>
+<a href="#2858" id="2858">2858</a>
+<a href="#2859" id="2859">2859</a>
+<a href="#2860" id="2860">2860</a>
+<a href="#2861" id="2861">2861</a>
+<a href="#2862" id="2862">2862</a>
+<a href="#2863" id="2863">2863</a>
+<a href="#2864" id="2864">2864</a>
+<a href="#2865" id="2865">2865</a>
+<a href="#2866" id="2866">2866</a>
+<a href="#2867" id="2867">2867</a>
+<a href="#2868" id="2868">2868</a>
+<a href="#2869" id="2869">2869</a>
+<a href="#2870" id="2870">2870</a>
+<a href="#2871" id="2871">2871</a>
+<a href="#2872" id="2872">2872</a>
+<a href="#2873" id="2873">2873</a>
+<a href="#2874" id="2874">2874</a>
+<a href="#2875" id="2875">2875</a>
+<a href="#2876" id="2876">2876</a>
+<a href="#2877" id="2877">2877</a>
+<a href="#2878" id="2878">2878</a>
+<a href="#2879" id="2879">2879</a>
+<a href="#2880" id="2880">2880</a>
+<a href="#2881" id="2881">2881</a>
+<a href="#2882" id="2882">2882</a>
+<a href="#2883" id="2883">2883</a>
+<a href="#2884" id="2884">2884</a>
+<a href="#2885" id="2885">2885</a>
+<a href="#2886" id="2886">2886</a>
+<a href="#2887" id="2887">2887</a>
+<a href="#2888" id="2888">2888</a>
+<a href="#2889" id="2889">2889</a>
+<a href="#2890" id="2890">2890</a>
+<a href="#2891" id="2891">2891</a>
+<a href="#2892" id="2892">2892</a>
+<a href="#2893" id="2893">2893</a>
+<a href="#2894" id="2894">2894</a>
+<a href="#2895" id="2895">2895</a>
+<a href="#2896" id="2896">2896</a>
+<a href="#2897" id="2897">2897</a>
+<a href="#2898" id="2898">2898</a>
+<a href="#2899" id="2899">2899</a>
+<a href="#2900" id="2900">2900</a>
+<a href="#2901" id="2901">2901</a>
+<a href="#2902" id="2902">2902</a>
+<a href="#2903" id="2903">2903</a>
+<a href="#2904" id="2904">2904</a>
+<a href="#2905" id="2905">2905</a>
+<a href="#2906" id="2906">2906</a>
+<a href="#2907" id="2907">2907</a>
+<a href="#2908" id="2908">2908</a>
+<a href="#2909" id="2909">2909</a>
+<a href="#2910" id="2910">2910</a>
+<a href="#2911" id="2911">2911</a>
+<a href="#2912" id="2912">2912</a>
+<a href="#2913" id="2913">2913</a>
+<a href="#2914" id="2914">2914</a>
+<a href="#2915" id="2915">2915</a>
+<a href="#2916" id="2916">2916</a>
+<a href="#2917" id="2917">2917</a>
+<a href="#2918" id="2918">2918</a>
+<a href="#2919" id="2919">2919</a>
+<a href="#2920" id="2920">2920</a>
+<a href="#2921" id="2921">2921</a>
+<a href="#2922" id="2922">2922</a>
+<a href="#2923" id="2923">2923</a>
+<a href="#2924" id="2924">2924</a>
+<a href="#2925" id="2925">2925</a>
+<a href="#2926" id="2926">2926</a>
+<a href="#2927" id="2927">2927</a>
+<a href="#2928" id="2928">2928</a>
+<a href="#2929" id="2929">2929</a>
+<a href="#2930" id="2930">2930</a>
+<a href="#2931" id="2931">2931</a>
+<a href="#2932" id="2932">2932</a>
+<a href="#2933" id="2933">2933</a>
+<a href="#2934" id="2934">2934</a>
+<a href="#2935" id="2935">2935</a>
+<a href="#2936" id="2936">2936</a>
+<a href="#2937" id="2937">2937</a>
+<a href="#2938" id="2938">2938</a>
+<a href="#2939" id="2939">2939</a>
+<a href="#2940" id="2940">2940</a>
+<a href="#2941" id="2941">2941</a>
+<a href="#2942" id="2942">2942</a>
+<a href="#2943" id="2943">2943</a>
+<a href="#2944" id="2944">2944</a>
+<a href="#2945" id="2945">2945</a>
+<a href="#2946" id="2946">2946</a>
+<a href="#2947" id="2947">2947</a>
+<a href="#2948" id="2948">2948</a>
+<a href="#2949" id="2949">2949</a>
+<a href="#2950" id="2950">2950</a>
+<a href="#2951" id="2951">2951</a>
+<a href="#2952" id="2952">2952</a>
+<a href="#2953" id="2953">2953</a>
+<a href="#2954" id="2954">2954</a>
+<a href="#2955" id="2955">2955</a>
+<a href="#2956" id="2956">2956</a>
+<a href="#2957" id="2957">2957</a>
+<a href="#2958" id="2958">2958</a>
+<a href="#2959" id="2959">2959</a>
+<a href="#2960" id="2960">2960</a>
+<a href="#2961" id="2961">2961</a>
+<a href="#2962" id="2962">2962</a>
+<a href="#2963" id="2963">2963</a>
+<a href="#2964" id="2964">2964</a>
+<a href="#2965" id="2965">2965</a>
+<a href="#2966" id="2966">2966</a>
+<a href="#2967" id="2967">2967</a>
+<a href="#2968" id="2968">2968</a>
+<a href="#2969" id="2969">2969</a>
+<a href="#2970" id="2970">2970</a>
+<a href="#2971" id="2971">2971</a>
+<a href="#2972" id="2972">2972</a>
+<a href="#2973" id="2973">2973</a>
+<a href="#2974" id="2974">2974</a>
+<a href="#2975" id="2975">2975</a>
+<a href="#2976" id="2976">2976</a>
+<a href="#2977" id="2977">2977</a>
+<a href="#2978" id="2978">2978</a>
+<a href="#2979" id="2979">2979</a>
+<a href="#2980" id="2980">2980</a>
+<a href="#2981" id="2981">2981</a>
+<a href="#2982" id="2982">2982</a>
+<a href="#2983" id="2983">2983</a>
+<a href="#2984" id="2984">2984</a>
+<a href="#2985" id="2985">2985</a>
+<a href="#2986" id="2986">2986</a>
+<a href="#2987" id="2987">2987</a>
+<a href="#2988" id="2988">2988</a>
+<a href="#2989" id="2989">2989</a>
+<a href="#2990" id="2990">2990</a>
+<a href="#2991" id="2991">2991</a>
+<a href="#2992" id="2992">2992</a>
+<a href="#2993" id="2993">2993</a></pre></div><pre class="rust"><code><span class="comment">// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -2810,9 +3026,8 @@
 <span class="kw">use </span><span class="kw">super</span>::snapshot::SnapshotReference;
 <span class="kw">pub use </span><span class="kw">super</span>::table_metadata_builder::{TableMetadataBuildResult, TableMetadataBuilder};
 <span class="kw">use super</span>::{
-    PartitionSpecRef, PartitionStatisticsFile, SchemaId, SchemaRef, Snapshot, SnapshotRef,
-    SnapshotRetention, SortOrder, SortOrderRef, StatisticsFile, StructType,
-    DEFAULT_PARTITION_SPEC_ID,
+    PartitionSpecRef, PartitionStatisticsFile, SchemaId, SchemaRef, SnapshotRef, SnapshotRetention,
+    SortOrder, SortOrderRef, StatisticsFile, StructType, DEFAULT_PARTITION_SPEC_ID,
 };
 <span class="kw">use </span><span class="kw">crate</span>::error::{timestamp_ms_to_utc, <span class="prelude-ty">Result</span>};
 <span class="kw">use crate</span>::{Error, ErrorKind};
@@ -2854,6 +3069,11 @@
 </span><span class="kw">pub const </span>PROPERTY_METADATA_PREVIOUS_VERSIONS_MAX: <span class="kw-2">&amp;</span>str = <span class="string">"write.metadata.previous-versions-max"</span>;
 <span class="doccomment">/// Default value for max number of previous versions to keep.
 </span><span class="kw">pub const </span>PROPERTY_METADATA_PREVIOUS_VERSIONS_MAX_DEFAULT: usize = <span class="number">100</span>;
+
+<span class="doccomment">/// Property key for max number of partitions to keep summary stats for.
+</span><span class="kw">pub const </span>PROPERTY_WRITE_PARTITION_SUMMARY_LIMIT: <span class="kw-2">&amp;</span>str = <span class="string">"write.summary.partition-limit"</span>;
+<span class="doccomment">/// Default value for the max number of partitions to keep summary stats for.
+</span><span class="kw">pub const </span>PROPERTY_WRITE_PARTITION_SUMMARY_LIMIT_DEFAULT: u64 = <span class="number">0</span>;
 
 <span class="doccomment">/// Reserved Iceberg table properties list.
 ///
@@ -3175,31 +3395,20 @@
         <span class="self">self</span>.partition_statistics.get(<span class="kw-2">&amp;</span>snapshot_id)
     }
 
-    <span class="doccomment">/// Append snapshot to table
-    </span><span class="attr">#[deprecated(
-        since = <span class="string">"0.4.0"</span>,
-        note = <span class="string">"please use `TableMetadataBuilder.set_branch_snapshot` instead"
-    </span>)]
-    </span><span class="kw">pub fn </span>append_snapshot(<span class="kw-2">&amp;mut </span><span class="self">self</span>, snapshot: Snapshot) {
-        <span class="self">self</span>.last_updated_ms = snapshot.timestamp_ms();
-        <span class="self">self</span>.last_sequence_number = snapshot.sequence_number();
-
-        <span class="self">self</span>.refs
-            .entry(MAIN_BRANCH.to_string())
-            .and_modify(|s| {
-                s.snapshot_id = snapshot.snapshot_id();
-            })
-            .or_insert_with(|| {
-                SnapshotReference::new(snapshot.snapshot_id(), SnapshotRetention::Branch {
-                    min_snapshots_to_keep: <span class="prelude-val">None</span>,
-                    max_snapshot_age_ms: <span class="prelude-val">None</span>,
-                    max_ref_age_ms: <span class="prelude-val">None</span>,
-                })
-            });
-
-        <span class="self">self</span>.snapshot_log.push(snapshot.log());
-        <span class="self">self</span>.snapshots
-            .insert(snapshot.snapshot_id(), Arc::new(snapshot));
+    <span class="kw">fn </span>construct_refs(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(current_snapshot_id) = <span class="self">self</span>.current_snapshot_id {
+            <span class="kw">if </span>!<span class="self">self</span>.refs.contains_key(MAIN_BRANCH) {
+                <span class="self">self</span>.refs
+                    .insert(MAIN_BRANCH.to_string(), SnapshotReference {
+                        snapshot_id: current_snapshot_id,
+                        retention: SnapshotRetention::Branch {
+                            min_snapshots_to_keep: <span class="prelude-val">None</span>,
+                            max_snapshot_age_ms: <span class="prelude-val">None</span>,
+                            max_ref_age_ms: <span class="prelude-val">None</span>,
+                        },
+                    });
+            }
+        }
     }
 
     <span class="doccomment">/// Normalize this partition spec.
@@ -3212,12 +3421,13 @@
     </span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>try_normalize(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;mut </span><span class="self">Self</span>&gt; {
         <span class="self">self</span>.validate_current_schema()<span class="question-mark">?</span>;
         <span class="self">self</span>.normalize_current_snapshot()<span class="question-mark">?</span>;
+        <span class="self">self</span>.construct_refs();
         <span class="self">self</span>.validate_refs()<span class="question-mark">?</span>;
         <span class="self">self</span>.validate_chronological_snapshot_logs()<span class="question-mark">?</span>;
         <span class="self">self</span>.validate_chronological_metadata_logs()<span class="question-mark">?</span>;
         <span class="comment">// Normalize location (remove trailing slash)
         </span><span class="self">self</span>.location = <span class="self">self</span>.location.trim_end_matches(<span class="string">'/'</span>).to_string();
-        <span class="self">self</span>.validate_format_version_specifics()<span class="question-mark">?</span>;
+        <span class="self">self</span>.validate_snapshot_sequence_number()<span class="question-mark">?</span>;
         <span class="self">self</span>.try_normalize_partition_spec()<span class="question-mark">?</span>;
         <span class="self">self</span>.try_normalize_sort_order()<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">self</span>)
@@ -3330,7 +3540,7 @@
     }
 
     <span class="doccomment">/// Validate that for V1 Metadata the last_sequence_number is 0
-    </span><span class="kw">fn </span>validate_format_version_specifics(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    </span><span class="kw">fn </span>validate_snapshot_sequence_number(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="kw">if </span><span class="self">self</span>.format_version &lt; FormatVersion::V2 &amp;&amp; <span class="self">self</span>.last_sequence_number != <span class="number">0 </span>{
             <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                 ErrorKind::DataInvalid,
@@ -3339,6 +3549,24 @@
                     <span class="self">self</span>.last_sequence_number
                 ),
             ));
+        }
+
+        <span class="kw">if </span><span class="self">self</span>.format_version &gt;= FormatVersion::V2 {
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(snapshot) = <span class="self">self
+                </span>.snapshots
+                .values()
+                .find(|snapshot| snapshot.sequence_number() &gt; <span class="self">self</span>.last_sequence_number)
+            {
+                <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
+                    ErrorKind::DataInvalid,
+                    <span class="macro">format!</span>(
+                        <span class="string">"Invalid snapshot with id {} and sequence number {} greater than last sequence number {}"</span>,
+                        snapshot.snapshot_id(),
+                        snapshot.sequence_number(),
+                        <span class="self">self</span>.last_sequence_number
+                    ),
+                ));
+            }
         }
 
         <span class="prelude-val">Ok</span>(())
@@ -3485,12 +3713,14 @@
         <span class="kw">pub </span>location: String,
         <span class="kw">pub </span>last_updated_ms: i64,
         <span class="kw">pub </span>last_column_id: i32,
-        <span class="kw">pub </span>schema: SchemaV1,
+        <span class="doccomment">/// `schema` is optional to prioritize `schemas` and `current-schema-id`, allowing liberal reading of V1 metadata.
+        </span><span class="kw">pub </span>schema: <span class="prelude-ty">Option</span>&lt;SchemaV1&gt;,
         <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
         </span><span class="kw">pub </span>schemas: <span class="prelude-ty">Option</span>&lt;Vec&lt;SchemaV1&gt;&gt;,
         <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
         </span><span class="kw">pub </span>current_schema_id: <span class="prelude-ty">Option</span>&lt;i32&gt;,
-        <span class="kw">pub </span>partition_spec: Vec&lt;PartitionField&gt;,
+        <span class="doccomment">/// `partition_spec` is optional to prioritize `partition_specs`, aligning with liberal reading of potentially invalid V1 metadata.
+        </span><span class="kw">pub </span>partition_spec: <span class="prelude-ty">Option</span>&lt;Vec&lt;PartitionField&gt;&gt;,
         <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
         </span><span class="kw">pub </span>partition_specs: <span class="prelude-ty">Option</span>&lt;Vec&lt;PartitionSpec&gt;&gt;,
         <span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
@@ -3684,61 +3914,81 @@
                 value.current_snapshot_id
             };
 
-            <span class="kw">let </span>schemas = value
-                .schemas
-                .map(|schemas| {
-                    <span class="prelude-val">Ok</span>::&lt;<span class="kw">_</span>, Error&gt;(HashMap::from_iter(
-                        schemas
+            <span class="kw">let </span>(schemas, current_schema_id, current_schema) =
+                <span class="kw">if let </span>(<span class="prelude-val">Some</span>(schemas_vec), <span class="prelude-val">Some</span>(schema_id)) =
+                    (<span class="kw-2">&amp;</span>value.schemas, value.current_schema_id)
+                {
+                    <span class="comment">// Option 1: Use 'schemas' + 'current_schema_id'
+                    </span><span class="kw">let </span>schema_map = HashMap::from_iter(
+                        schemas_vec
+                            .clone()
                             .into_iter()
-                            .enumerate()
-                            .map(|(i, schema)| {
-                                <span class="prelude-val">Ok</span>((
-                                    schema.schema_id.unwrap_or(i <span class="kw">as </span>i32),
-                                    Arc::new(schema.try_into()<span class="question-mark">?</span>),
-                                ))
+                            .map(|schema| {
+                                <span class="kw">let </span>schema: Schema = schema.try_into()<span class="question-mark">?</span>;
+                                <span class="prelude-val">Ok</span>((schema.schema_id(), Arc::new(schema)))
                             })
-                            .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, Error&gt;&gt;()<span class="question-mark">?
-                            </span>.into_iter(),
-                    ))
-                })
-                .or_else(|| {
-                    <span class="prelude-val">Some</span>(value.schema.try_into().map(|schema: Schema| {
-                        HashMap::from_iter(<span class="macro">vec!</span>[(schema.schema_id(), Arc::new(schema))])
-                    }))
-                })
-                .transpose()<span class="question-mark">?
-                </span>.unwrap_or_default();
-            <span class="kw">let </span>current_schema_id = value
-                .current_schema_id
-                .unwrap_or_else(|| schemas.keys().copied().max().unwrap_or_default());
-            <span class="kw">let </span>current_schema = schemas
-                .get(<span class="kw-2">&amp;</span>current_schema_id)
-                .ok_or_else(|| {
-                    Error::new(
+                            .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, Error&gt;&gt;()<span class="question-mark">?</span>,
+                    );
+
+                    <span class="kw">let </span>schema = schema_map
+                        .get(<span class="kw-2">&amp;</span>schema_id)
+                        .ok_or_else(|| {
+                            Error::new(
+                                ErrorKind::DataInvalid,
+                                <span class="macro">format!</span>(
+                                    <span class="string">"No schema exists with the current schema id {}."</span>,
+                                    schema_id
+                                ),
+                            )
+                        })<span class="question-mark">?
+                        </span>.clone();
+                    (schema_map, schema_id, schema)
+                } <span class="kw">else if let </span><span class="prelude-val">Some</span>(schema) = value.schema {
+                    <span class="comment">// Option 2: Fall back to `schema`
+                    </span><span class="kw">let </span>schema: Schema = schema.try_into()<span class="question-mark">?</span>;
+                    <span class="kw">let </span>schema_id = schema.schema_id();
+                    <span class="kw">let </span>schema_arc = Arc::new(schema);
+                    <span class="kw">let </span>schema_map = HashMap::from_iter(<span class="macro">vec!</span>[(schema_id, schema_arc.clone())]);
+                    (schema_map, schema_id, schema_arc)
+                } <span class="kw">else </span>{
+                    <span class="comment">// Option 3: No valid schema configuration found
+                    </span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                         ErrorKind::DataInvalid,
-                        <span class="macro">format!</span>(
-                            <span class="string">"No schema exists with the current schema id {}."</span>,
-                            current_schema_id
-                        ),
-                    )
-                })<span class="question-mark">?
-                </span>.clone();
+                        <span class="string">"No valid schema configuration found in table metadata"</span>,
+                    ));
+                };
 
-            <span class="kw">let </span>partition_specs = <span class="kw">match </span>value.partition_specs {
-                <span class="prelude-val">Some</span>(partition_specs) =&gt; partition_specs,
-                <span class="prelude-val">None </span>=&gt; <span class="macro">vec!</span>[PartitionSpec::builder(current_schema.clone())
+            <span class="comment">// Prioritize 'partition_specs' over 'partition_spec'
+            </span><span class="kw">let </span>partition_specs = <span class="kw">if let </span><span class="prelude-val">Some</span>(specs_vec) = value.partition_specs {
+                <span class="comment">// Option 1: Use 'partition_specs'
+                </span>specs_vec
+                    .into_iter()
+                    .map(|x| (x.spec_id(), Arc::new(x)))
+                    .collect::&lt;HashMap&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt;&gt;()
+            } <span class="kw">else if let </span><span class="prelude-val">Some</span>(partition_spec) = value.partition_spec {
+                <span class="comment">// Option 2: Fall back to 'partition_spec'
+                </span><span class="kw">let </span>spec = PartitionSpec::builder(current_schema.clone())
                     .with_spec_id(DEFAULT_PARTITION_SPEC_ID)
-                    .add_unbound_fields(value.partition_spec.into_iter().map(|f| f.into_unbound()))<span class="question-mark">?
-                    </span>.build()<span class="question-mark">?</span>],
-            }
-            .into_iter()
-            .map(|x| (x.spec_id(), Arc::new(x)))
-            .collect::&lt;HashMap&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt;&gt;();
+                    .add_unbound_fields(partition_spec.into_iter().map(|f| f.into_unbound()))<span class="question-mark">?
+                    </span>.build()<span class="question-mark">?</span>;
 
-            <span class="kw">let </span>default_spec_id = value
+                HashMap::from_iter(<span class="macro">vec!</span>[(DEFAULT_PARTITION_SPEC_ID, Arc::new(spec))])
+            } <span class="kw">else </span>{
+                <span class="comment">// Option 3: Create empty partition spec
+                </span><span class="kw">let </span>spec = PartitionSpec::builder(current_schema.clone())
+                    .with_spec_id(DEFAULT_PARTITION_SPEC_ID)
+                    .build()<span class="question-mark">?</span>;
+
+                HashMap::from_iter(<span class="macro">vec!</span>[(DEFAULT_PARTITION_SPEC_ID, Arc::new(spec))])
+            };
+
+            <span class="comment">// Get the default_spec_id, prioritizing the explicit value if provided
+            </span><span class="kw">let </span>default_spec_id = value
                 .default_spec_id
                 .unwrap_or_else(|| partition_specs.keys().copied().max().unwrap_or_default());
-            <span class="kw">let </span>default_spec: PartitionSpecRef = partition_specs
+
+            <span class="comment">// Get the default spec
+            </span><span class="kw">let </span>default_spec: PartitionSpecRef = partition_specs
                 .get(<span class="kw-2">&amp;</span>default_spec_id)
                 .map(|x| Arc::unwrap_or_clone(x.clone()))
                 .ok_or_else(|| {
@@ -3889,16 +4139,17 @@
                 location: v.location,
                 last_updated_ms: v.last_updated_ms,
                 last_column_id: v.last_column_id,
-                schema: v
-                    .schemas
-                    .get(<span class="kw-2">&amp;</span>v.current_schema_id)
-                    .ok_or(Error::new(
-                        ErrorKind::Unexpected,
-                        <span class="string">"current_schema_id not found in schemas"</span>,
-                    ))<span class="question-mark">?
-                    </span>.as_ref()
-                    .clone()
-                    .into(),
+                schema: <span class="prelude-val">Some</span>(
+                    v.schemas
+                        .get(<span class="kw-2">&amp;</span>v.current_schema_id)
+                        .ok_or(Error::new(
+                            ErrorKind::Unexpected,
+                            <span class="string">"current_schema_id not found in schemas"</span>,
+                        ))<span class="question-mark">?
+                        </span>.as_ref()
+                        .clone()
+                        .into(),
+                ),
                 schemas: <span class="prelude-val">Some</span>(
                     v.schemas
                         .into_values()
@@ -3910,7 +4161,7 @@
                         .collect(),
                 ),
                 current_schema_id: <span class="prelude-val">Some</span>(v.current_schema_id),
-                partition_spec: v.default_spec.fields().to_vec(),
+                partition_spec: <span class="prelude-val">Some</span>(v.default_spec.fields().to_vec()),
                 partition_specs: <span class="prelude-val">Some</span>(
                     v.partition_specs
                         .into_values()
@@ -4776,6 +5027,89 @@
     }
 
     <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_v2_wrong_max_snapshot_sequence_number() {
+        <span class="kw">let </span>data = <span class="string">r#"
+        {
+            "format-version": 2,
+            "table-uuid": "9c12d441-03fe-4693-9a96-a0705ddf69c1",
+            "location": "s3://bucket/test/location",
+            "last-sequence-number": 1,
+            "last-updated-ms": 1602638573590,
+            "last-column-id": 3,
+            "current-schema-id": 0,
+            "schemas": [
+                {
+                    "type": "struct",
+                    "schema-id": 0,
+                    "fields": [
+                        {
+                            "id": 1,
+                            "name": "x",
+                            "required": true,
+                            "type": "long"
+                        }
+                    ]
+                }
+            ],
+            "default-spec-id": 0,
+            "partition-specs": [
+                {
+                    "spec-id": 0,
+                    "fields": []
+                }
+            ],
+            "last-partition-id": 1000,
+            "default-sort-order-id": 0,
+            "sort-orders": [
+                {
+                    "order-id": 0,
+                    "fields": []
+                }
+            ],
+            "properties": {},
+            "current-snapshot-id": 3055729675574597004,
+            "snapshots": [
+                {
+                    "snapshot-id": 3055729675574597004,
+                    "timestamp-ms": 1555100955770,
+                    "sequence-number": 4,
+                    "summary": {
+                        "operation": "append"
+                    },
+                    "manifest-list": "s3://a/b/2.avro",
+                    "schema-id": 0
+                }
+            ],
+            "statistics": [],
+            "snapshot-log": [],
+            "metadata-log": []
+        }
+    "#</span>;
+
+        <span class="kw">let </span>err = serde_json::from_str::&lt;TableMetadata&gt;(data).unwrap_err();
+        <span class="macro">println!</span>(<span class="string">"{}"</span>, err);
+        <span class="macro">assert!</span>(err.to_string().contains(
+            <span class="string">"Invalid snapshot with id 3055729675574597004 and sequence number 4 greater than last sequence number 1"
+        </span>));
+
+        <span class="comment">// Change max sequence number to 4 - should work
+        </span><span class="kw">let </span>data = data.replace(
+            <span class="string">r#""last-sequence-number": 1,"#</span>,
+            <span class="string">r#""last-sequence-number": 4,"#</span>,
+        );
+        <span class="kw">let </span>metadata = serde_json::from_str::&lt;TableMetadata&gt;(data.as_str()).unwrap();
+        <span class="macro">assert_eq!</span>(metadata.last_sequence_number, <span class="number">4</span>);
+
+        <span class="comment">// Change max sequence number to 5 - should work
+        </span><span class="kw">let </span>data = data.replace(
+            <span class="string">r#""last-sequence-number": 4,"#</span>,
+            <span class="string">r#""last-sequence-number": 5,"#</span>,
+        );
+        <span class="kw">let </span>metadata = serde_json::from_str::&lt;TableMetadata&gt;(data.as_str()).unwrap();
+        <span class="macro">assert_eq!</span>(metadata.last_sequence_number, <span class="number">5</span>);
+    }
+
+    <span class="attr">#[test]
     </span><span class="kw">fn </span>test_statistic_files() {
         <span class="kw">let </span>data = <span class="string">r#"
         {
@@ -5371,6 +5705,104 @@
         };
 
         check_table_metadata_serde(<span class="kw-2">&amp;</span>metadata, expected);
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_table_metadata_v1_compat() {
+        <span class="kw">let </span>metadata =
+            fs::read_to_string(<span class="string">"testdata/table_metadata/TableMetadataV1Compat.json"</span>).unwrap();
+
+        <span class="comment">// Deserialize the JSON to verify it works
+        </span><span class="kw">let </span>desered_type: TableMetadata = serde_json::from_str(<span class="kw-2">&amp;</span>metadata)
+            .expect(<span class="string">"Failed to deserialize TableMetadataV1Compat.json"</span>);
+
+        <span class="comment">// Verify some key fields match
+        </span><span class="macro">assert_eq!</span>(desered_type.format_version(), FormatVersion::V1);
+        <span class="macro">assert_eq!</span>(
+            desered_type.uuid(),
+            Uuid::parse_str(<span class="string">"3276010d-7b1d-488c-98d8-9025fc4fde6b"</span>).unwrap()
+        );
+        <span class="macro">assert_eq!</span>(
+            desered_type.location(),
+            <span class="string">"s3://bucket/warehouse/iceberg/glue.db/table_name"
+        </span>);
+        <span class="macro">assert_eq!</span>(desered_type.last_updated_ms(), <span class="number">1727773114005</span>);
+        <span class="macro">assert_eq!</span>(desered_type.current_schema_id(), <span class="number">0</span>);
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_table_metadata_v1_schemas_without_current_id() {
+        <span class="kw">let </span>metadata = fs::read_to_string(
+            <span class="string">"testdata/table_metadata/TableMetadataV1SchemasWithoutCurrentId.json"</span>,
+        )
+        .unwrap();
+
+        <span class="comment">// Deserialize the JSON - this should succeed by using the 'schema' field instead of 'schemas'
+        </span><span class="kw">let </span>desered_type: TableMetadata = serde_json::from_str(<span class="kw-2">&amp;</span>metadata)
+            .expect(<span class="string">"Failed to deserialize TableMetadataV1SchemasWithoutCurrentId.json"</span>);
+
+        <span class="comment">// Verify it used the 'schema' field
+        </span><span class="macro">assert_eq!</span>(desered_type.format_version(), FormatVersion::V1);
+        <span class="macro">assert_eq!</span>(
+            desered_type.uuid(),
+            Uuid::parse_str(<span class="string">"d20125c8-7284-442c-9aea-15fee620737c"</span>).unwrap()
+        );
+
+        <span class="comment">// Get the schema and verify it has the expected fields
+        </span><span class="kw">let </span>schema = desered_type.current_schema();
+        <span class="macro">assert_eq!</span>(schema.as_struct().fields().len(), <span class="number">3</span>);
+        <span class="macro">assert_eq!</span>(schema.as_struct().fields()[<span class="number">0</span>].name, <span class="string">"x"</span>);
+        <span class="macro">assert_eq!</span>(schema.as_struct().fields()[<span class="number">1</span>].name, <span class="string">"y"</span>);
+        <span class="macro">assert_eq!</span>(schema.as_struct().fields()[<span class="number">2</span>].name, <span class="string">"z"</span>);
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_table_metadata_v1_no_valid_schema() {
+        <span class="kw">let </span>metadata =
+            fs::read_to_string(<span class="string">"testdata/table_metadata/TableMetadataV1NoValidSchema.json"</span>)
+                .unwrap();
+
+        <span class="comment">// Deserialize the JSON - this should fail because neither schemas + current_schema_id nor schema is valid
+        </span><span class="kw">let </span>desered: <span class="prelude-ty">Result</span>&lt;TableMetadata, serde_json::Error&gt; = serde_json::from_str(<span class="kw-2">&amp;</span>metadata);
+
+        <span class="macro">assert!</span>(desered.is_err());
+        <span class="kw">let </span>error_message = desered.unwrap_err().to_string();
+        <span class="macro">assert!</span>(
+            error_message.contains(<span class="string">"No valid schema configuration found"</span>),
+            <span class="string">"Expected error about no valid schema configuration, got: {}"</span>,
+            error_message
+        );
+    }
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_table_metadata_v1_partition_specs_without_default_id() {
+        <span class="kw">let </span>metadata = fs::read_to_string(
+            <span class="string">"testdata/table_metadata/TableMetadataV1PartitionSpecsWithoutDefaultId.json"</span>,
+        )
+        .unwrap();
+
+        <span class="comment">// Deserialize the JSON - this should succeed by inferring default_spec_id as the max spec ID
+        </span><span class="kw">let </span>desered_type: TableMetadata = serde_json::from_str(<span class="kw-2">&amp;</span>metadata)
+            .expect(<span class="string">"Failed to deserialize TableMetadataV1PartitionSpecsWithoutDefaultId.json"</span>);
+
+        <span class="comment">// Verify basic metadata
+        </span><span class="macro">assert_eq!</span>(desered_type.format_version(), FormatVersion::V1);
+        <span class="macro">assert_eq!</span>(
+            desered_type.uuid(),
+            Uuid::parse_str(<span class="string">"d20125c8-7284-442c-9aea-15fee620737c"</span>).unwrap()
+        );
+
+        <span class="comment">// Verify partition specs
+        </span><span class="macro">assert_eq!</span>(desered_type.default_partition_spec_id(), <span class="number">2</span>); <span class="comment">// Should pick the largest spec ID (2)
+        </span><span class="macro">assert_eq!</span>(desered_type.partition_specs.len(), <span class="number">2</span>);
+
+        <span class="comment">// Verify the default spec has the expected fields
+        </span><span class="kw">let </span>default_spec = <span class="kw-2">&amp;</span>desered_type.default_spec;
+        <span class="macro">assert_eq!</span>(default_spec.spec_id(), <span class="number">2</span>);
+        <span class="macro">assert_eq!</span>(default_spec.fields().len(), <span class="number">1</span>);
+        <span class="macro">assert_eq!</span>(default_spec.fields()[<span class="number">0</span>].name, <span class="string">"y"</span>);
+        <span class="macro">assert_eq!</span>(default_spec.fields()[<span class="number">0</span>].transform, Transform::Identity);
+        <span class="macro">assert_eq!</span>(default_spec.fields()[<span class="number">0</span>].source_id, <span class="number">2</span>);
     }
 
     <span class="attr">#[test]
