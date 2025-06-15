@@ -82,18 +82,20 @@ jobs:
         uses: ./.github/actions/setup-builder
         with:
           rust-version: ${{ env.rust_msrv }}
-      - uses: PyO3/maturin-action@v1
-        with:
-          target: ${{ matrix.target }}
-          manylinux: ${{ matrix.manylinux || 'auto' }}
-          working-directory: "bindings/python"
-          command: build
-          args: --release -o dist
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-${{ matrix.os }}-${{ matrix.target }}
-          path: bindings/python/dist
+      # - uses: PyO3/maturin-action@v1
+      #   with:
+      #     target: ${{ matrix.target }}
+      #     manylinux: ${{ matrix.manylinux || 'auto' }}
+      #     working-directory: "bindings/python"
+      #     command: build
+      #     args: --release -o dist
+      # - name: Upload wheels
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: wheels-${{ matrix.os }}-${{ matrix.target }}
+      #     path: bindings/python/dist
+      - name: echo head_branch
+        run: echo "head_branch ${{ github.event.workflow_run.head_branch }}"
 
   pypi-publish:
     name: Publish Python 🐍 distribution 📦 to Pypi
