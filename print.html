@@ -196,7 +196,14 @@
   ~ under the License.
 -->
 <h1 id="iceberg-rust"><a class="header" href="#iceberg-rust">Iceberg Rust</a></h1>
-<p>Iceberg Rust is a rust implementation for accessing iceberg tables.</p>
+<p><code>iceberg-rust</code> is a Rust implementation for managing Apache Iceberg tables.</p>
+<h2 id="what-is-apache-iceberg"><a class="header" href="#what-is-apache-iceberg">What is Apache Iceberg?</a></h2>
+<p><a href="https://iceberg.apache.org">Apache Iceberg</a> is a modern, high-performance open table format
+for huge analytic datasets that brings SQL-like tables to processing engines including Spark, Trino, PrestoDB, Flink, Hive and Impala. </p>
+<p>Iceberg provides a metadata layer that sits on top of formats like Parquet 
+and ORC, ensuring data is organized, accessible, and safe to work with at scale. It introduces features long
+expected in databases such as transactional consistency, schema evolution, and time travel into environments 
+where files are stored directly on systems like Amazon S3.</p>
 <div style="break-before: page; page-break-before: always;"></div><!--
   ~ Licensed to the Apache Software Foundation (ASF) under one
   ~ or more contributor license agreements.  See the NOTICE file
@@ -220,8 +227,11 @@
 Cargo 1.75.0 or later is required to build.
 </div>
 <p>Add <code>iceberg</code> and <code>iceberg-catalog-rest</code> into <code>Cargo.toml</code> dependencies:</p>
-<pre><code class="language-toml">iceberg = &quot;0.2.0&quot;
-iceberg-catalog-rest = &quot;0.2.0&quot;
+<pre><code class="language-toml">iceberg = &quot;0.6.0&quot;
+iceberg-catalog-rest = &quot;0.6.0&quot;
+</code></pre>
+<p>using <code>cargo add</code>:</p>
+<pre><code class="language-bash">$ cargo add iceberg iceberg-catalog-rest
 </code></pre>
 <p>iceberg is under active development, you may want to use the git version instead:</p>
 <pre><code class="language-toml">iceberg = { git = &quot;https://github.com/apache/iceberg-rust&quot;, rev = &quot;commit-hash&quot; }
@@ -301,8 +311,19 @@ iceberg-catalog-rest = &quot;0.2.0&quot;
 <li>Create and list namespaces.</li>
 <li>Create, load, and drop tables</li>
 </ul>
-<p>Currently only rest catalog has been implemented, and other catalogs are under active development. Here is an 
-example of how to create a <code>RestCatalog</code>:</p>
+<p>There is support for the following catalogs:</p>
+<div class="table-wrapper"><table><thead><tr><th>Catalog</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>Rest</code></td><td>the Iceberg REST catalog</td></tr>
+<tr><td><code>Glue</code></td><td>the AWS Glue Data Catalog</td></tr>
+<tr><td><code>Memory</code></td><td>a memory-based Catalog</td></tr>
+<tr><td><code>HMS</code></td><td>Apache Iceberg HiveMetaStore catalog</td></tr>
+<tr><td><code>S3Tables</code></td><td>AWS S3 Tables</td></tr>
+<tr><td><code>SQL</code></td><td>SQL-based catalog</td></tr>
+</tbody></table>
+</div>
+<p>Not all catalog implementations are complete.</p>
+<h2 id="restcatalog"><a class="header" href="#restcatalog"><code>RestCatalog</code></a></h2>
+<p>Here is an example of how to create a <code>RestCatalog</code>:</p>
 <pre><code class="language-rust no_run noplayground"><span class="boring">// Licensed to the Apache Software Foundation (ASF) under one
 </span><span class="boring">// or more contributor license agreements.  See the NOTICE file
 </span><span class="boring">// distributed with this work for additional information
@@ -322,8 +343,8 @@ example of how to create a <code>RestCatalog</code>:</p>
 </span><span class="boring">
 </span><span class="boring">use std::collections::HashMap;
 </span><span class="boring">
-</span><span class="boring">use iceberg::{Catalog, NamespaceIdent};
-</span><span class="boring">use iceberg_catalog_rest::{RestCatalog, RestCatalogConfig};
+</span><span class="boring">use iceberg::{Catalog, CatalogBuilder, NamespaceIdent};
+</span><span class="boring">use iceberg_catalog_rest::{REST_CATALOG_PROP_URI, RestCatalogBuilder};
 </span><span class="boring">
 </span><span class="boring">static REST_URI: &amp;str = &quot;http://localhost:8181&quot;;
 </span><span class="boring">
@@ -337,10 +358,13 @@ example of how to create a <code>RestCatalog</code>:</p>
 </span><span class="boring">#[tokio::main]
 </span><span class="boring">async fn main() {
 </span>    // Create the REST iceberg catalog.
-    let config = RestCatalogConfig::builder()
-        .uri(REST_URI.to_string())
-        .build();
-    let catalog = RestCatalog::new(config);
+    let catalog = RestCatalogBuilder::default()
+        .load(
+            &quot;rest&quot;,
+            HashMap::from([(REST_CATALOG_PROP_URI.to_string(), REST_URI.to_string())]),
+        )
+        .await
+        .unwrap();
 <span class="boring">
 </span><span class="boring">    // List all namespaces already in the catalog.
 </span><span class="boring">    let existing_namespaces = catalog.list_namespaces(None).await.unwrap();
@@ -392,8 +416,8 @@ example of how to create a <code>RestCatalog</code>:</p>
 </span><span class="boring">
 </span><span class="boring">use std::collections::HashMap;
 </span><span class="boring">
-</span><span class="boring">use iceberg::{Catalog, NamespaceIdent};
-</span><span class="boring">use iceberg_catalog_rest::{RestCatalog, RestCatalogConfig};
+</span><span class="boring">use iceberg::{Catalog, CatalogBuilder, NamespaceIdent};
+</span><span class="boring">use iceberg_catalog_rest::{REST_CATALOG_PROP_URI, RestCatalogBuilder};
 </span><span class="boring">
 </span><span class="boring">static REST_URI: &amp;str = &quot;http://localhost:8181&quot;;
 </span><span class="boring">
@@ -407,10 +431,13 @@ example of how to create a <code>RestCatalog</code>:</p>
 </span><span class="boring">#[tokio::main]
 </span><span class="boring">async fn main() {
 </span><span class="boring">    // Create the REST iceberg catalog.
-</span><span class="boring">    let config = RestCatalogConfig::builder()
-</span><span class="boring">        .uri(REST_URI.to_string())
-</span><span class="boring">        .build();
-</span><span class="boring">    let catalog = RestCatalog::new(config);
+</span><span class="boring">    let catalog = RestCatalogBuilder::default()
+</span><span class="boring">        .load(
+</span><span class="boring">            &quot;rest&quot;,
+</span><span class="boring">            HashMap::from([(REST_CATALOG_PROP_URI.to_string(), REST_URI.to_string())]),
+</span><span class="boring">        )
+</span><span class="boring">        .await
+</span><span class="boring">        .unwrap();
 </span><span class="boring">
 </span>    // List all namespaces already in the catalog.
     let existing_namespaces = catalog.list_namespaces(None).await.unwrap();
@@ -462,8 +489,8 @@ example of how to create a <code>RestCatalog</code>:</p>
 </span><span class="boring">
 </span><span class="boring">use std::collections::HashMap;
 </span><span class="boring">
-</span><span class="boring">use iceberg::{Catalog, NamespaceIdent};
-</span><span class="boring">use iceberg_catalog_rest::{RestCatalog, RestCatalogConfig};
+</span><span class="boring">use iceberg::{Catalog, CatalogBuilder, NamespaceIdent};
+</span><span class="boring">use iceberg_catalog_rest::{REST_CATALOG_PROP_URI, RestCatalogBuilder};
 </span><span class="boring">
 </span><span class="boring">static REST_URI: &amp;str = &quot;http://localhost:8181&quot;;
 </span><span class="boring">
@@ -477,10 +504,13 @@ example of how to create a <code>RestCatalog</code>:</p>
 </span><span class="boring">#[tokio::main]
 </span><span class="boring">async fn main() {
 </span><span class="boring">    // Create the REST iceberg catalog.
-</span><span class="boring">    let config = RestCatalogConfig::builder()
-</span><span class="boring">        .uri(REST_URI.to_string())
-</span><span class="boring">        .build();
-</span><span class="boring">    let catalog = RestCatalog::new(config);
+</span><span class="boring">    let catalog = RestCatalogBuilder::default()
+</span><span class="boring">        .load(
+</span><span class="boring">            &quot;rest&quot;,
+</span><span class="boring">            HashMap::from([(REST_CATALOG_PROP_URI.to_string(), REST_URI.to_string())]),
+</span><span class="boring">        )
+</span><span class="boring">        .await
+</span><span class="boring">        .unwrap();
 </span><span class="boring">
 </span><span class="boring">    // List all namespaces already in the catalog.
 </span><span class="boring">    let existing_namespaces = catalog.list_namespaces(None).await.unwrap();
@@ -535,8 +565,8 @@ example of how to create a <code>RestCatalog</code>:</p>
 </span><span class="boring">use std::collections::HashMap;
 </span><span class="boring">
 </span><span class="boring">use iceberg::spec::{NestedField, PrimitiveType, Schema, Type};
-</span><span class="boring">use iceberg::{Catalog, NamespaceIdent, TableCreation, TableIdent};
-</span><span class="boring">use iceberg_catalog_rest::{RestCatalog, RestCatalogConfig};
+</span><span class="boring">use iceberg::{Catalog, CatalogBuilder, NamespaceIdent, TableCreation, TableIdent};
+</span><span class="boring">use iceberg_catalog_rest::{REST_CATALOG_PROP_URI, RestCatalogBuilder};
 </span><span class="boring">
 </span><span class="boring">static REST_URI: &amp;str = &quot;http://localhost:8181&quot;;
 </span><span class="boring">static NAMESPACE: &amp;str = &quot;default&quot;;
@@ -552,10 +582,13 @@ example of how to create a <code>RestCatalog</code>:</p>
 </span><span class="boring">#[tokio::main]
 </span><span class="boring">async fn main() {
 </span><span class="boring">    // Create the REST iceberg catalog.
-</span><span class="boring">    let config = RestCatalogConfig::builder()
-</span><span class="boring">        .uri(REST_URI.to_string())
-</span><span class="boring">        .build();
-</span><span class="boring">    let catalog = RestCatalog::new(config);
+</span><span class="boring">    let catalog = RestCatalogBuilder::default()
+</span><span class="boring">        .load(
+</span><span class="boring">            &quot;rest&quot;,
+</span><span class="boring">            HashMap::from([(REST_CATALOG_PROP_URI.to_string(), REST_URI.to_string())]),
+</span><span class="boring">        )
+</span><span class="boring">        .await
+</span><span class="boring">        .unwrap();
 </span><span class="boring">
 </span>    // Create the table identifier.
     let namespace_ident = NamespaceIdent::from_vec(vec![NAMESPACE.to_string()]).unwrap();
@@ -630,8 +663,8 @@ example of how to create a <code>RestCatalog</code>:</p>
 </span><span class="boring">use std::collections::HashMap;
 </span><span class="boring">
 </span><span class="boring">use iceberg::spec::{NestedField, PrimitiveType, Schema, Type};
-</span><span class="boring">use iceberg::{Catalog, NamespaceIdent, TableCreation, TableIdent};
-</span><span class="boring">use iceberg_catalog_rest::{RestCatalog, RestCatalogConfig};
+</span><span class="boring">use iceberg::{Catalog, CatalogBuilder, NamespaceIdent, TableCreation, TableIdent};
+</span><span class="boring">use iceberg_catalog_rest::{REST_CATALOG_PROP_URI, RestCatalogBuilder};
 </span><span class="boring">
 </span><span class="boring">static REST_URI: &amp;str = &quot;http://localhost:8181&quot;;
 </span><span class="boring">static NAMESPACE: &amp;str = &quot;default&quot;;
@@ -647,10 +680,13 @@ example of how to create a <code>RestCatalog</code>:</p>
 </span><span class="boring">#[tokio::main]
 </span><span class="boring">async fn main() {
 </span><span class="boring">    // Create the REST iceberg catalog.
-</span><span class="boring">    let config = RestCatalogConfig::builder()
-</span><span class="boring">        .uri(REST_URI.to_string())
-</span><span class="boring">        .build();
-</span><span class="boring">    let catalog = RestCatalog::new(config);
+</span><span class="boring">    let catalog = RestCatalogBuilder::default()
+</span><span class="boring">        .load(
+</span><span class="boring">            &quot;rest&quot;,
+</span><span class="boring">            HashMap::from([(REST_CATALOG_PROP_URI.to_string(), REST_URI.to_string())]),
+</span><span class="boring">        )
+</span><span class="boring">        .await
+</span><span class="boring">        .unwrap();
 </span><span class="boring">
 </span><span class="boring">    // Create the table identifier.
 </span><span class="boring">    let namespace_ident = NamespaceIdent::from_vec(vec![NAMESPACE.to_string()]).unwrap();
@@ -771,8 +807,8 @@ cargo 1.69.0 (6e9a83356 2023-04-12)
 </code></pre>
 <h4 id="install-docker-or-podman"><a class="header" href="#install-docker-or-podman">Install Docker or Podman</a></h4>
 <p>Currently, iceberg-rust uses Docker to set up environment for integration tests. Native Docker has some limitations, please check (https://github.com/apache/iceberg-rust/pull/748). Please use Orbstack or Podman.</p>
-<p>For MacOS users, you can install <a href="docs/contributing/orbstack.html">OrbStack as a docker alternative</a>.</p>
-<p>For podman, refer to <a href="docs/contributing/podman.html">Using Podman instead of Docker</a></p>
+<p>For MacOS users, you can install <a href="docs/contributing/orbstack.html">OrbStack as a docker alternative</a>.
+For Podman users, refer to <a href="docs/contributing/podman.html">Using Podman instead of Docker</a></p>
 <h2 id="build"><a class="header" href="#build">Build</a></h2>
 <ul>
 <li>To compile the project: <code>make build</code></li>
@@ -978,7 +1014,7 @@ https://downloads.apache.org/iceberg/KEYS
 
 Git tag for the release:
 
-https://github.com/apache/iceberg-rust/releases/tag/${release_version}
+https://github.com/apache/iceberg-rust/releases/tag/v${iceberg_version}
 
 Please download, verify, and test.
 
@@ -1052,7 +1088,7 @@ gpg --import KEYS
 </code></pre>
 <ul>
 <li>Verify the <code>.asc</code> file: <code>gpg --verify apache-iceberg-rust-${iceberg_version}.tar.gz.asc</code></li>
-<li>Verify the checksums: <code>shasum -a 512 apache-iceberg-rust-${iceberg_version}.tar.gz.sha512</code></li>
+<li>Verify the checksums: <code>shasum -a 512 -c apache-iceberg-rust-${iceberg_version}.tar.gz.sha512</code></li>
 <li>Verify build and test:</li>
 </ul>
 <pre><code class="language-bash">tar -xzf apache-iceberg-rust-${iceberg_version}.tar.gz
