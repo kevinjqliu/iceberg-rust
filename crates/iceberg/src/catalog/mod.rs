@@ -18,17 +18,20 @@
 //! Catalog API for Apache Iceberg
 
 pub mod memory;
+mod metadata_location;
 
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::future::Future;
 use std::mem::take;
 use std::ops::Deref;
+use std::str::FromStr;
 use std::sync::Arc;
 
 use _serde::deserialize_snapshot;
 use async_trait::async_trait;
 pub use memory::MemoryCatalog;
+pub use metadata_location::*;
 #[cfg(test)]
 use mockall::automock;
 use serde_derive::{Deserialize, Serialize};
@@ -122,7 +125,7 @@ pub trait CatalogBuilder: Default + Debug + Send + Sync {
 /// NamespaceIdent represents the identifier of a namespace in the catalog.
 ///
 /// The namespace identifier is a list of strings, where each string is a
-/// component of the namespace. It's catalog implementer's responsibility to
+/// component of the namespace. It's the catalog implementer's responsibility to
 /// handle the namespace identifier correctly.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct NamespaceIdent(Vec<String>);
@@ -335,14 +338,26 @@ impl TableCommit {
             requirement.check(Some(table.metadata()))?;
         }
 
-        // apply updates to metadata builder
-        let mut metadata_builder = table.metadata().clone().into_builder(None);
+        // get current metadata location
+        let current_metadata_location = table.metadata_location_result()?;
 
+        // apply updates to metadata builder
+        let mut metadata_builder = table
+            .metadata()
+            .clone()
+            .into_builder(Some(current_metadata_location.to_string()));
         for update in self.updates {
             metadata_builder = update.apply(metadata_builder)?;
         }
 
-        Ok(table.with_metadata(Arc::new(metadata_builder.build()?.metadata)))
+        // Bump the version of metadata
+        let new_metadata_location = MetadataLocation::from_str(current_metadata_location)?
+            .with_next_version()
+            .to_string();
+
+        Ok(table
+            .with_metadata(Arc::new(metadata_builder.build()?.metadata))
+            .with_metadata_location(new_metadata_location))
     }
 }
 
@@ -546,7 +561,7 @@ impl TableUpdate {
     pub fn apply(self, builder: TableMetadataBuilder) -> Result<TableMetadataBuilder> {
         match self {
             TableUpdate::AssignUuid { uuid } => Ok(builder.assign_uuid(uuid)),
-            TableUpdate::AddSchema { schema, .. } => Ok(builder.add_schema(schema)),
+            TableUpdate::AddSchema { schema, .. } => Ok(builder.add_schema(schema)?),
             TableUpdate::SetCurrentSchema { schema_id } => builder.set_current_schema(schema_id),
             TableUpdate::AddSpec { spec } => builder.add_partition_spec(spec),
             TableUpdate::SetDefaultSpec { spec_id } => builder.set_default_partition_spec(spec_id),
@@ -597,32 +612,35 @@ impl TableRequirement {
             match self {
                 TableRequirement::NotExist => {
                     return Err(Error::new(
-                        ErrorKind::DataInvalid,
+                        ErrorKind::CatalogCommitConflicts,
                         format!(
                             "Requirement failed: Table with id {} already exists",
                             metadata.uuid()
                         ),
-                    ));
+                    )
+                    .with_retryable(true));
                 }
                 TableRequirement::UuidMatch { uuid } => {
                     if &metadata.uuid() != uuid {
                         return Err(Error::new(
-                            ErrorKind::DataInvalid,
+                            ErrorKind::CatalogCommitConflicts,
                             "Requirement failed: Table UUID does not match",
                         )
                         .with_context("expected", *uuid)
-                        .with_context("found", metadata.uuid()));
+                        .with_context("found", metadata.uuid())
+                        .with_retryable(true));
                     }
                 }
                 TableRequirement::CurrentSchemaIdMatch { current_schema_id } => {
                     // ToDo: Harmonize the types of current_schema_id
                     if metadata.current_schema_id != *current_schema_id {
                         return Err(Error::new(
-                            ErrorKind::DataInvalid,
+                            ErrorKind::CatalogCommitConflicts,
                             "Requirement failed: Current schema id does not match",
                         )
                         .with_context("expected", current_schema_id.to_string())
-                        .with_context("found", metadata.current_schema_id.to_string()));
+                        .with_context("found", metadata.current_schema_id.to_string())
+                        .with_retryable(true));
                     }
                 }
                 TableRequirement::DefaultSortOrderIdMatch {
@@ -630,54 +648,58 @@ impl TableRequirement {
                 } => {
                     if metadata.default_sort_order().order_id != *default_sort_order_id {
                         return Err(Error::new(
-                            ErrorKind::DataInvalid,
+                            ErrorKind::CatalogCommitConflicts,
                             "Requirement failed: Default sort order id does not match",
                         )
                         .with_context("expected", default_sort_order_id.to_string())
-                        .with_context(
-                            "found",
-                            metadata.default_sort_order().order_id.to_string(),
-                        ));
+                        .with_context("found", metadata.default_sort_order().order_id.to_string())
+                        .with_retryable(true));
                     }
                 }
                 TableRequirement::RefSnapshotIdMatch { r#ref, snapshot_id } => {
                     let snapshot_ref = metadata.snapshot_for_ref(r#ref);
                     if let Some(snapshot_id) = snapshot_id {
-                        let snapshot_ref = snapshot_ref.ok_or(Error::new(
-                            ErrorKind::DataInvalid,
-                            format!("Requirement failed: Branch or tag `{}` not found", r#ref),
-                        ))?;
+                        let snapshot_ref = snapshot_ref.ok_or(
+                            Error::new(
+                                ErrorKind::CatalogCommitConflicts,
+                                format!("Requirement failed: Branch or tag `{}` not found", r#ref),
+                            )
+                            .with_retryable(true),
+                        )?;
                         if snapshot_ref.snapshot_id() != *snapshot_id {
                             return Err(Error::new(
-                                ErrorKind::DataInvalid,
+                                ErrorKind::CatalogCommitConflicts,
                                 format!(
                                     "Requirement failed: Branch or tag `{}`'s snapshot has changed",
                                     r#ref
                                 ),
                             )
                             .with_context("expected", snapshot_id.to_string())
-                            .with_context("found", snapshot_ref.snapshot_id().to_string()));
+                            .with_context("found", snapshot_ref.snapshot_id().to_string())
+                            .with_retryable(true));
                         }
                     } else if snapshot_ref.is_some() {
                         // a null snapshot ID means the ref should not exist already
                         return Err(Error::new(
-                            ErrorKind::DataInvalid,
+                            ErrorKind::CatalogCommitConflicts,
                             format!(
                                 "Requirement failed: Branch or tag `{}` already exists",
                                 r#ref
                             ),
-                        ));
+                        )
+                        .with_retryable(true));
                     }
                 }
                 TableRequirement::DefaultSpecIdMatch { default_spec_id } => {
                     // ToDo: Harmonize the types of default_spec_id
                     if metadata.default_partition_spec_id() != *default_spec_id {
                         return Err(Error::new(
-                            ErrorKind::DataInvalid,
+                            ErrorKind::CatalogCommitConflicts,
                             "Requirement failed: Default partition spec id does not match",
                         )
                         .with_context("expected", default_spec_id.to_string())
-                        .with_context("found", metadata.default_partition_spec_id().to_string()));
+                        .with_context("found", metadata.default_partition_spec_id().to_string())
+                        .with_retryable(true));
                     }
                 }
                 TableRequirement::LastAssignedPartitionIdMatch {
@@ -685,11 +707,12 @@ impl TableRequirement {
                 } => {
                     if metadata.last_partition_id != *last_assigned_partition_id {
                         return Err(Error::new(
-                            ErrorKind::DataInvalid,
+                            ErrorKind::CatalogCommitConflicts,
                             "Requirement failed: Last assigned partition id does not match",
                         )
                         .with_context("expected", last_assigned_partition_id.to_string())
-                        .with_context("found", metadata.last_partition_id.to_string()));
+                        .with_context("found", metadata.last_partition_id.to_string())
+                        .with_retryable(true));
                     }
                 }
                 TableRequirement::LastAssignedFieldIdMatch {
@@ -697,11 +720,12 @@ impl TableRequirement {
                 } => {
                     if &metadata.last_column_id != last_assigned_field_id {
                         return Err(Error::new(
-                            ErrorKind::DataInvalid,
+                            ErrorKind::CatalogCommitConflicts,
                             "Requirement failed: Last assigned field id does not match",
                         )
                         .with_context("expected", last_assigned_field_id.to_string())
-                        .with_context("found", metadata.last_column_id.to_string()));
+                        .with_context("found", metadata.last_column_id.to_string())
+                        .with_retryable(true));
                     }
                 }
             };
@@ -710,7 +734,7 @@ impl TableRequirement {
                 TableRequirement::NotExist => {}
                 _ => {
                     return Err(Error::new(
-                        ErrorKind::DataInvalid,
+                        ErrorKind::TableNotFound,
                         "Requirement failed: Table does not exist",
                     ));
                 }
@@ -814,7 +838,7 @@ pub enum ViewUpdate {
     #[serde(rename_all = "kebab-case")]
     AssignUuid {
         /// The new UUID to assign.
-        uuid: uuid::Uuid,
+        uuid: Uuid,
     },
     /// Upgrade view's format version
     #[serde(rename_all = "kebab-case")]
@@ -1092,7 +1116,7 @@ mod tests {
         .unwrap()
         .metadata;
 
-        // Ref exists and should matches
+        // Ref exists and should match
         let requirement = TableRequirement::RefSnapshotIdMatch {
             r#ref: "main".to_string(),
             snapshot_id: Some(3051729675574597004),
@@ -2163,7 +2187,7 @@ mod tests {
 
             Table::builder()
                 .metadata(resp)
-                .metadata_location("s3://bucket/test/location/metadata/v2.json".to_string())
+                .metadata_location("s3://bucket/test/location/metadata/00000-8a62c37d-4573-4021-952a-c0baef7d21d0.metadata.json".to_string())
                 .identifier(TableIdent::from_strs(["ns1", "test1"]).unwrap())
                 .file_io(FileIOBuilder::new("memory").build().unwrap())
                 .build()
@@ -2172,7 +2196,7 @@ mod tests {
 
         let updates = vec![
             TableUpdate::SetLocation {
-                location: "s3://bucket/test/new_location/metadata/v2.json".to_string(),
+                location: "s3://bucket/test/new_location/data".to_string(),
             },
             TableUpdate::SetProperties {
                 updates: vec![
@@ -2205,9 +2229,17 @@ mod tests {
             "v2"
         );
 
+        // metadata version should be bumped
+        assert!(
+            updated_table
+                .metadata_location()
+                .unwrap()
+                .starts_with("s3://bucket/test/location/metadata/00001-")
+        );
+
         assert_eq!(
             updated_table.metadata().location,
-            "s3://bucket/test/new_location/metadata/v2.json".to_string()
-        )
+            "s3://bucket/test/new_location/data",
+        );
     }
 }

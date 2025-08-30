@@ -23,13 +23,12 @@ use iceberg::io::FileIO;
 use iceberg::spec::{TableMetadata, TableMetadataBuilder};
 use iceberg::table::Table;
 use iceberg::{
-    Catalog, Error, ErrorKind, Namespace, NamespaceIdent, Result, TableCommit, TableCreation,
-    TableIdent,
+    Catalog, Error, ErrorKind, MetadataLocation, Namespace, NamespaceIdent, Result, TableCommit,
+    TableCreation, TableIdent,
 };
 use sqlx::any::{AnyPoolOptions, AnyQueryResult, AnyRow, install_default_drivers};
 use sqlx::{Any, AnyPool, Row, Transaction};
 use typed_builder::TypedBuilder;
-use uuid::Uuid;
 
 use crate::error::{
     from_sqlx_error, no_such_namespace_err, no_such_table_err, table_already_exists_err,
@@ -642,9 +641,7 @@ impl Catalog for SqlCatalog {
             .try_get::<String, _>(CATALOG_FIELD_METADATA_LOCATION_PROP)
             .map_err(from_sqlx_error)?;
 
-        let file = self.fileio.new_input(&tbl_metadata_location)?;
-        let metadata_content = file.read().await?;
-        let metadata = serde_json::from_slice::<TableMetadata>(&metadata_content)?;
+        let metadata = TableMetadata::read_from(&self.fileio, &tbl_metadata_location).await?;
 
         Ok(Table::builder()
             .file_io(self.fileio.clone())
@@ -702,14 +699,11 @@ impl Catalog for SqlCatalog {
         let tbl_metadata = TableMetadataBuilder::from_table_creation(tbl_creation)?
             .build()?
             .metadata;
-        let tbl_metadata_location = format!(
-            "{}/metadata/0-{}.metadata.json",
-            location.clone(),
-            Uuid::new_v4()
-        );
+        let tbl_metadata_location =
+            MetadataLocation::new_with_table_location(location.clone()).to_string();
 
-        let file = self.fileio.new_output(&tbl_metadata_location)?;
-        file.write(serde_json::to_vec(&tbl_metadata)?.into())
+        tbl_metadata
+            .write_to(&self.fileio, &tbl_metadata_location)
             .await?;
 
         self.execute(&format!(
@@ -1512,7 +1506,7 @@ mod tests {
         let table_name = "tbl1";
         let expected_table_ident = TableIdent::new(namespace_ident.clone(), table_name.into());
         let expected_table_metadata_location_regex = format!(
-            "^{}/tbl1/metadata/0-{}.metadata.json$",
+            "^{}/tbl1/metadata/00000-{}.metadata.json$",
             namespace_location, UUID_REGEX_STR,
         );
 
@@ -1569,7 +1563,7 @@ mod tests {
         let expected_table_ident =
             TableIdent::new(nested_namespace_ident.clone(), table_name.into());
         let expected_table_metadata_location_regex = format!(
-            "^{}/tbl1/metadata/0-{}.metadata.json$",
+            "^{}/tbl1/metadata/00000-{}.metadata.json$",
             nested_namespace_location, UUID_REGEX_STR,
         );
 
@@ -1609,7 +1603,7 @@ mod tests {
         let table_name = "tbl1";
         let expected_table_ident = TableIdent::new(namespace_ident.clone(), table_name.into());
         let expected_table_metadata_location_regex = format!(
-            "^{}/a/tbl1/metadata/0-{}.metadata.json$",
+            "^{}/a/tbl1/metadata/00000-{}.metadata.json$",
             warehouse_loc, UUID_REGEX_STR
         );
 
@@ -1648,7 +1642,7 @@ mod tests {
         let expected_table_ident =
             TableIdent::new(nested_namespace_ident.clone(), table_name.into());
         let expected_table_metadata_location_regex = format!(
-            "^{}/a/b/tbl1/metadata/0-{}.metadata.json$",
+            "^{}/a/b/tbl1/metadata/00000-{}.metadata.json$",
             warehouse_loc, UUID_REGEX_STR
         );
 

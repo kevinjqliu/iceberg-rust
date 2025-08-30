@@ -19,14 +19,15 @@
 
 use std::any::Any;
 use std::collections::HashMap;
+use std::future::Future;
 use std::str::FromStr;
 
 use async_trait::async_trait;
 use iceberg::io::{self, FileIO};
 use iceberg::table::Table;
 use iceberg::{
-    Catalog, Error, ErrorKind, Namespace, NamespaceIdent, Result, TableCommit, TableCreation,
-    TableIdent,
+    Catalog, CatalogBuilder, Error, ErrorKind, Namespace, NamespaceIdent, Result, TableCommit,
+    TableCreation, TableIdent,
 };
 use itertools::Itertools;
 use reqwest::header::{
@@ -42,16 +43,95 @@ use crate::client::{
 use crate::types::{
     CatalogConfig, CommitTableRequest, CommitTableResponse, CreateTableRequest,
     ListNamespaceResponse, ListTableResponse, LoadTableResponse, NamespaceSerde,
-    RenameTableRequest,
+    RegisterTableRequest, RenameTableRequest,
 };
+
+/// REST catalog URI
+pub const REST_CATALOG_PROP_URI: &str = "uri";
+/// REST catalog warehouse location
+pub const REST_CATALOG_PROP_WAREHOUSE: &str = "warehouse";
 
 const ICEBERG_REST_SPEC_VERSION: &str = "0.14.1";
 const CARGO_PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
 const PATH_V1: &str = "v1";
 
+/// Builder for [`RestCatalog`].
+#[derive(Debug)]
+pub struct RestCatalogBuilder(RestCatalogConfig);
+
+impl Default for RestCatalogBuilder {
+    fn default() -> Self {
+        Self(RestCatalogConfig {
+            name: None,
+            uri: "".to_string(),
+            warehouse: None,
+            props: HashMap::new(),
+            client: None,
+        })
+    }
+}
+
+impl CatalogBuilder for RestCatalogBuilder {
+    type C = RestCatalog;
+
+    fn load(
+        mut self,
+        name: impl Into<String>,
+        props: HashMap<String, String>,
+    ) -> impl Future<Output = Result<Self::C>> + Send {
+        self.0.name = Some(name.into());
+
+        if props.contains_key(REST_CATALOG_PROP_URI) {
+            self.0.uri = props
+                .get(REST_CATALOG_PROP_URI)
+                .cloned()
+                .unwrap_or_default();
+        }
+
+        if props.contains_key(REST_CATALOG_PROP_WAREHOUSE) {
+            self.0.warehouse = props.get(REST_CATALOG_PROP_WAREHOUSE).cloned()
+        }
+
+        // Collect other remaining properties
+        self.0.props = props
+            .into_iter()
+            .filter(|(k, _)| k != REST_CATALOG_PROP_URI && k != REST_CATALOG_PROP_WAREHOUSE)
+            .collect();
+
+        let result = {
+            if self.0.name.is_none() {
+                Err(Error::new(
+                    ErrorKind::DataInvalid,
+                    "Catalog name is required",
+                ))
+            } else if self.0.uri.is_empty() {
+                Err(Error::new(
+                    ErrorKind::DataInvalid,
+                    "Catalog uri is required",
+                ))
+            } else {
+                Ok(RestCatalog::new(self.0))
+            }
+        };
+
+        std::future::ready(result)
+    }
+}
+
+impl RestCatalogBuilder {
+    /// Configures the catalog with a custom HTTP client.
+    pub fn with_client(mut self, client: Client) -> Self {
+        self.0.client = Some(client);
+        self
+    }
+}
+
 /// Rest catalog configuration.
 #[derive(Clone, Debug, TypedBuilder)]
-pub struct RestCatalogConfig {
+pub(crate) struct RestCatalogConfig {
+    #[builder(default, setter(strip_option))]
+    name: Option<String>,
+
     uri: String,
 
     #[builder(default, setter(strip_option(fallback = warehouse_opt)))]
@@ -99,6 +179,10 @@ impl RestCatalogConfig {
 
     fn rename_table_endpoint(&self) -> String {
         self.url_prefixed(&["tables", "rename"])
+    }
+
+    fn register_table_endpoint(&self, ns: &NamespaceIdent) -> String {
+        self.url_prefixed(&["namespaces", &ns.to_url_string(), "register"])
     }
 
     fn table_endpoint(&self, table: &TableIdent) -> String {
@@ -238,7 +322,7 @@ struct RestContext {
 pub struct RestCatalog {
     /// User config is stored as-is and never be changed.
     ///
-    /// It's could be different from the config fetched from the server and used at runtime.
+    /// It could be different from the config fetched from the server and used at runtime.
     user_config: RestCatalogConfig,
     ctx: OnceCell<RestContext>,
     /// Extensions for the FileIOBuilder.
@@ -247,7 +331,7 @@ pub struct RestCatalog {
 
 impl RestCatalog {
     /// Creates a `RestCatalog` from a [`RestCatalogConfig`].
-    pub fn new(config: RestCatalogConfig) -> Self {
+    fn new(config: RestCatalogConfig) -> Self {
         Self {
             user_config: config,
             ctx: OnceCell::new(),
@@ -316,7 +400,7 @@ impl RestCatalog {
             None => None,
         };
 
-        let file_io = match warehouse_path.or(metadata_location) {
+        let file_io = match metadata_location.or(warehouse_path) {
             Some(url) => FileIO::from_path(url)?
                 .with_props(props)
                 .with_extensions(self.file_io_extensions.clone())
@@ -615,7 +699,7 @@ impl Catalog for RestCatalog {
             .config
             .unwrap_or_default()
             .into_iter()
-            .chain(self.user_config.props.clone().into_iter())
+            .chain(self.user_config.props.clone())
             .collect();
 
         let file_io = self
@@ -666,7 +750,7 @@ impl Catalog for RestCatalog {
             .config
             .unwrap_or_default()
             .into_iter()
-            .chain(self.user_config.props.clone().into_iter())
+            .chain(self.user_config.props.clone())
             .collect();
 
         let file_io = self
@@ -755,13 +839,60 @@ impl Catalog for RestCatalog {
 
     async fn register_table(
         &self,
-        _table_ident: &TableIdent,
-        _metadata_location: String,
+        table_ident: &TableIdent,
+        metadata_location: String,
     ) -> Result<Table> {
-        Err(Error::new(
-            ErrorKind::FeatureUnsupported,
-            "Registering a table is not supported yet",
-        ))
+        let context = self.context().await?;
+
+        let request = context
+            .client
+            .request(
+                Method::POST,
+                context
+                    .config
+                    .register_table_endpoint(table_ident.namespace()),
+            )
+            .json(&RegisterTableRequest {
+                name: table_ident.name.clone(),
+                metadata_location: metadata_location.clone(),
+                overwrite: Some(false),
+            })
+            .build()?;
+
+        let http_response = context.client.query_catalog(request).await?;
+
+        let response: LoadTableResponse = match http_response.status() {
+            StatusCode::OK => {
+                deserialize_catalog_response::<LoadTableResponse>(http_response).await?
+            }
+            StatusCode::NOT_FOUND => {
+                return Err(Error::new(
+                    ErrorKind::NamespaceNotFound,
+                    "The namespace specified does not exist.",
+                ));
+            }
+            StatusCode::CONFLICT => {
+                return Err(Error::new(
+                    ErrorKind::TableAlreadyExists,
+                    "The given table already exists.",
+                ));
+            }
+            _ => return Err(deserialize_unexpected_catalog_error(http_response).await),
+        };
+
+        let metadata_location = response.metadata_location.as_ref().ok_or(Error::new(
+            ErrorKind::DataInvalid,
+            "Metadata location missing in `register_table` response!",
+        ))?;
+
+        let file_io = self.load_file_io(Some(metadata_location), None).await?;
+
+        Table::builder()
+            .identifier(table_ident.clone())
+            .file_io(file_io)
+            .metadata(response.metadata)
+            .metadata_location(metadata_location.clone())
+            .build()
     }
 
     async fn update_table(&self, mut commit: TableCommit) -> Result<Table> {
@@ -786,7 +917,7 @@ impl Catalog for RestCatalog {
             StatusCode::OK => deserialize_catalog_response(http_response).await?,
             StatusCode::NOT_FOUND => {
                 return Err(Error::new(
-                    ErrorKind::Unexpected,
+                    ErrorKind::TableNotFound,
                     "Tried to update a table that does not exist",
                 ));
             }
@@ -2469,5 +2600,138 @@ mod tests {
         config_mock.assert_async().await;
         update_table_mock.assert_async().await;
         load_table_mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn test_register_table() {
+        let mut server = Server::new_async().await;
+
+        let config_mock = create_config_mock(&mut server).await;
+
+        let register_table_mock = server
+            .mock("POST", "/v1/namespaces/ns1/register")
+            .with_status(200)
+            .with_body_from_file(format!(
+                "{}/testdata/{}",
+                env!("CARGO_MANIFEST_DIR"),
+                "load_table_response.json"
+            ))
+            .create_async()
+            .await;
+
+        let catalog = RestCatalog::new(RestCatalogConfig::builder().uri(server.url()).build());
+        let table_ident =
+            TableIdent::new(NamespaceIdent::new("ns1".to_string()), "test1".to_string());
+        let metadata_location = String::from(
+            "s3://warehouse/database/table/metadata/00001-5f2f8166-244c-4eae-ac36-384ecdec81fc.gz.metadata.json",
+        );
+
+        let table = catalog
+            .register_table(&table_ident, metadata_location)
+            .await
+            .unwrap();
+
+        assert_eq!(
+            &TableIdent::from_strs(vec!["ns1", "test1"]).unwrap(),
+            table.identifier()
+        );
+        assert_eq!(
+            "s3://warehouse/database/table/metadata/00001-5f2f8166-244c-4eae-ac36-384ecdec81fc.gz.metadata.json",
+            table.metadata_location().unwrap()
+        );
+
+        config_mock.assert_async().await;
+        register_table_mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn test_register_table_404() {
+        let mut server = Server::new_async().await;
+
+        let config_mock = create_config_mock(&mut server).await;
+
+        let register_table_mock = server
+            .mock("POST", "/v1/namespaces/ns1/register")
+            .with_status(404)
+            .with_body(
+                r#"
+{
+    "error": {
+        "message": "The namespace specified does not exist",
+        "type": "NoSuchNamespaceErrorException",
+        "code": 404
+    }
+}
+            "#,
+            )
+            .create_async()
+            .await;
+
+        let catalog = RestCatalog::new(RestCatalogConfig::builder().uri(server.url()).build());
+
+        let table_ident =
+            TableIdent::new(NamespaceIdent::new("ns1".to_string()), "test1".to_string());
+        let metadata_location = String::from(
+            "s3://warehouse/database/table/metadata/00001-5f2f8166-244c-4eae-ac36-384ecdec81fc.gz.metadata.json",
+        );
+        let table = catalog
+            .register_table(&table_ident, metadata_location)
+            .await;
+
+        assert!(table.is_err());
+        assert!(table.err().unwrap().message().contains("does not exist"));
+
+        config_mock.assert_async().await;
+        register_table_mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn test_create_rest_catalog() {
+        let builder = RestCatalogBuilder::default().with_client(Client::new());
+
+        let catalog = builder
+            .load(
+                "test",
+                HashMap::from([
+                    (
+                        REST_CATALOG_PROP_URI.to_string(),
+                        "http://localhost:8080".to_string(),
+                    ),
+                    ("a".to_string(), "b".to_string()),
+                ]),
+            )
+            .await;
+
+        assert!(catalog.is_ok());
+
+        let catalog_config = catalog.unwrap().user_config;
+        assert_eq!(catalog_config.name.as_deref(), Some("test"));
+        assert_eq!(catalog_config.uri, "http://localhost:8080");
+        assert_eq!(catalog_config.warehouse, None);
+        assert!(catalog_config.client.is_some());
+
+        assert_eq!(catalog_config.props.get("a"), Some(&"b".to_string()));
+        assert!(!catalog_config.props.contains_key(REST_CATALOG_PROP_URI));
+    }
+
+    #[tokio::test]
+    async fn test_create_rest_catalog_no_uri() {
+        let builder = RestCatalogBuilder::default();
+
+        let catalog = builder
+            .load(
+                "test",
+                HashMap::from([(
+                    REST_CATALOG_PROP_WAREHOUSE.to_string(),
+                    "s3://warehouse".to_string(),
+                )]),
+            )
+            .await;
+
+        assert!(catalog.is_err());
+        if let Err(err) = catalog {
+            assert_eq!(err.kind(), ErrorKind::DataInvalid);
+            assert_eq!(err.message(), "Catalog uri is required");
+        }
     }
 }

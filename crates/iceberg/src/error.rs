@@ -50,10 +50,10 @@ pub enum ErrorKind {
     /// Iceberg table already exists at creation.
     TableAlreadyExists,
 
-    /// Iceberg namespace already exists at creation.
+    /// Iceberg namespace does not exist.
     NamespaceNotFound,
 
-    /// Iceberg table already exists at creation.
+    /// Iceberg table does not exist.
     TableNotFound,
 
     /// Iceberg feature is not supported.
@@ -278,7 +278,7 @@ impl Error {
     /// If you just want to print error with backtrace, use `Debug`, like `format!("{err:?}")`.
     ///
     /// If you use nightly rust, and want to access `iceberg::Error`'s backtrace in the standard way, you can
-    /// implement a newtype like this:
+    /// implement a new type like this:
     ///
     /// ```ignore
     /// // assume you already have `#![feature(error_generic_member_access)]` on the top of your crate
@@ -346,6 +346,12 @@ define_from_err!(
     std::str::Utf8Error,
     ErrorKind::Unexpected,
     "handling invalid utf-8 characters"
+);
+
+define_from_err!(
+    core::num::ParseIntError,
+    ErrorKind::Unexpected,
+    "parsing integer from string"
 );
 
 define_from_err!(
