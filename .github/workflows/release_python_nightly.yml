@@ -40,7 +40,7 @@ jobs:
 
   sdist:
     needs: set-version
-    if: github.repository == 'apache/iceberg-rust' # Only run for apache repo
+    # if: github.repository == 'apache/iceberg-rust' # Only run for apache repo
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
