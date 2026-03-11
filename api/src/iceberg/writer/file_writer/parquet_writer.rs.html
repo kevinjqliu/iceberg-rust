@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `crates/iceberg/src/writer/file_writer/parquet_writer.rs`."><title>parquet_writer.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-84e720fa.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="iceberg" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0-nightly (be19eda0d 2025-06-22)" data-channel="nightly" data-search-js="search-92309212.js" data-settings-js="settings-5514c975.js" ><script src="../../../../static.files/storage-4e99c027.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-fd3af306.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">iceberg/writer/file_writer/</div>parquet_writer.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// Licensed to the Apache Software Foundation (ASF) under one
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `crates/iceberg/src/writer/file_writer/parquet_writer.rs`."><title>parquet_writer.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="iceberg" data-themes="" data-resource-suffix="" data-rustdoc-version="1.93.0-nightly (f37aa9955 2025-10-26)" data-channel="nightly" data-search-js="search-d69d8955.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../../../static.files/storage-e2aeef58.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">iceberg/writer/file_writer/</div>parquet_writer.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// Licensed to the Apache Software Foundation (ASF) under one
 <a href=#2 id=2 data-nosnippet>2</a>// or more contributor license agreements.  See the NOTICE file
 <a href=#3 id=3 data-nosnippet>3</a>// distributed with this work for additional information
 <a href=#4 id=4 data-nosnippet>4</a>// regarding copyright ownership.  The ASF licenses this file
@@ -436,7 +436,7 @@
 <a href=#436 id=436 data-nosnippet>436</a>                lower_bounds.get(<span class="kw-2">&amp;</span>field.source_id),
 <a href=#437 id=437 data-nosnippet>437</a>                upper_bounds.get(<span class="kw-2">&amp;</span>field.source_id),
 <a href=#438 id=438 data-nosnippet>438</a>            ) {
-<a href=#439 id=439 data-nosnippet>439</a>                <span class="kw">if </span>!field.transform.preserves_order() {
+<a href=#439 id=439 data-nosnippet>439</a>                <span class="macro">if !</span>field.transform.preserves_order() {
 <a href=#440 id=440 data-nosnippet>440</a>                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
 <a href=#441 id=441 data-nosnippet>441</a>                        ErrorKind::DataInvalid,
 <a href=#442 id=442 data-nosnippet>442</a>                        <span class="macro">format!</span>(
@@ -446,7 +446,7 @@
 <a href=#446 id=446 data-nosnippet>446</a>                    ));
 <a href=#447 id=447 data-nosnippet>447</a>                }
 <a href=#448 id=448 data-nosnippet>448</a>
-<a href=#449 id=449 data-nosnippet>449</a>                <span class="kw">if </span>lower != upper {
+<a href=#449 id=449 data-nosnippet>449</a>                <span class="kw">if </span><span class="macro">lower !</span>= upper {
 <a href=#450 id=450 data-nosnippet>450</a>                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
 <a href=#451 id=451 data-nosnippet>451</a>                        ErrorKind::DataInvalid,
 <a href=#452 id=452 data-nosnippet>452</a>                        <span class="macro">format!</span>(
@@ -627,7 +627,7 @@
 <a href=#627 id=627 data-nosnippet>627</a>
 <a href=#628 id=628 data-nosnippet>628</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
 <a href=#629 id=629 data-nosnippet>629</a>    <span class="kw">use </span><span class="kw">crate</span>::arrow::schema_to_arrow_schema;
-<a href=#630 id=630 data-nosnippet>630</a>    <span class="kw">use </span><span class="kw">crate</span>::io::FileIOBuilder;
+<a href=#630 id=630 data-nosnippet>630</a>    <span class="kw">use </span><span class="kw">crate</span>::io::FileIO;
 <a href=#631 id=631 data-nosnippet>631</a>    <span class="kw">use </span><span class="kw">crate</span>::spec::decimal_utils::{decimal_mantissa, decimal_new, decimal_scale};
 <a href=#632 id=632 data-nosnippet>632</a>    <span class="kw">use </span><span class="kw">crate</span>::spec::{PrimitiveLiteral, Struct, <span class="kw-2">*</span>};
 <a href=#633 id=633 data-nosnippet>633</a>    <span class="kw">use </span><span class="kw">crate</span>::writer::file_writer::location_generator::{
@@ -790,7 +790,7 @@
 <a href=#790 id=790 data-nosnippet>790</a>    <span class="attr">#[tokio::test]
 <a href=#791 id=791 data-nosnippet>791</a>    </span><span class="kw">async fn </span>test_parquet_writer() -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
 <a href=#792 id=792 data-nosnippet>792</a>        <span class="kw">let </span>temp_dir = TempDir::new().unwrap();
-<a href=#793 id=793 data-nosnippet>793</a>        <span class="kw">let </span>file_io = FileIOBuilder::new_fs_io().build().unwrap();
+<a href=#793 id=793 data-nosnippet>793</a>        <span class="kw">let </span>file_io = FileIO::new_with_fs();
 <a href=#794 id=794 data-nosnippet>794</a>        <span class="kw">let </span>location_gen = DefaultLocationGenerator::with_data_location(
 <a href=#795 id=795 data-nosnippet>795</a>            temp_dir.path().to_str().unwrap().to_string(),
 <a href=#796 id=796 data-nosnippet>796</a>        );
@@ -864,7 +864,7 @@
 <a href=#864 id=864 data-nosnippet>864</a>    <span class="attr">#[tokio::test]
 <a href=#865 id=865 data-nosnippet>865</a>    </span><span class="kw">async fn </span>test_parquet_writer_with_complex_schema() -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
 <a href=#866 id=866 data-nosnippet>866</a>        <span class="kw">let </span>temp_dir = TempDir::new().unwrap();
-<a href=#867 id=867 data-nosnippet>867</a>        <span class="kw">let </span>file_io = FileIOBuilder::new_fs_io().build().unwrap();
+<a href=#867 id=867 data-nosnippet>867</a>        <span class="kw">let </span>file_io = FileIO::new_with_fs();
 <a href=#868 id=868 data-nosnippet>868</a>        <span class="kw">let </span>location_gen = DefaultLocationGenerator::with_data_location(
 <a href=#869 id=869 data-nosnippet>869</a>            temp_dir.path().to_str().unwrap().to_string(),
 <a href=#870 id=870 data-nosnippet>870</a>        );
@@ -1087,7 +1087,7 @@
 <a href=#1087 id=1087 data-nosnippet>1087</a>    <span class="attr">#[tokio::test]
 <a href=#1088 id=1088 data-nosnippet>1088</a>    </span><span class="kw">async fn </span>test_all_type_for_write() -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
 <a href=#1089 id=1089 data-nosnippet>1089</a>        <span class="kw">let </span>temp_dir = TempDir::new().unwrap();
-<a href=#1090 id=1090 data-nosnippet>1090</a>        <span class="kw">let </span>file_io = FileIOBuilder::new_fs_io().build().unwrap();
+<a href=#1090 id=1090 data-nosnippet>1090</a>        <span class="kw">let </span>file_io = FileIO::new_with_fs();
 <a href=#1091 id=1091 data-nosnippet>1091</a>        <span class="kw">let </span>location_gen = DefaultLocationGenerator::with_data_location(
 <a href=#1092 id=1092 data-nosnippet>1092</a>            temp_dir.path().to_str().unwrap().to_string(),
 <a href=#1093 id=1093 data-nosnippet>1093</a>        );
@@ -1328,7 +1328,7 @@
 <a href=#1328 id=1328 data-nosnippet>1328</a>    <span class="attr">#[tokio::test]
 <a href=#1329 id=1329 data-nosnippet>1329</a>    </span><span class="kw">async fn </span>test_decimal_bound() -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
 <a href=#1330 id=1330 data-nosnippet>1330</a>        <span class="kw">let </span>temp_dir = TempDir::new().unwrap();
-<a href=#1331 id=1331 data-nosnippet>1331</a>        <span class="kw">let </span>file_io = FileIOBuilder::new_fs_io().build().unwrap();
+<a href=#1331 id=1331 data-nosnippet>1331</a>        <span class="kw">let </span>file_io = FileIO::new_with_fs();
 <a href=#1332 id=1332 data-nosnippet>1332</a>        <span class="kw">let </span>location_gen = DefaultLocationGenerator::with_data_location(
 <a href=#1333 id=1333 data-nosnippet>1333</a>            temp_dir.path().to_str().unwrap().to_string(),
 <a href=#1334 id=1334 data-nosnippet>1334</a>        );
@@ -1573,7 +1573,7 @@
 <a href=#1573 id=1573 data-nosnippet>1573</a>    <span class="attr">#[tokio::test]
 <a href=#1574 id=1574 data-nosnippet>1574</a>    </span><span class="kw">async fn </span>test_empty_write() -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
 <a href=#1575 id=1575 data-nosnippet>1575</a>        <span class="kw">let </span>temp_dir = TempDir::new().unwrap();
-<a href=#1576 id=1576 data-nosnippet>1576</a>        <span class="kw">let </span>file_io = FileIOBuilder::new_fs_io().build().unwrap();
+<a href=#1576 id=1576 data-nosnippet>1576</a>        <span class="kw">let </span>file_io = FileIO::new_with_fs();
 <a href=#1577 id=1577 data-nosnippet>1577</a>        <span class="kw">let </span>location_gen = DefaultLocationGenerator::with_data_location(
 <a href=#1578 id=1578 data-nosnippet>1578</a>            temp_dir.path().to_str().unwrap().to_string(),
 <a href=#1579 id=1579 data-nosnippet>1579</a>        );
@@ -1623,7 +1623,7 @@
 <a href=#1623 id=1623 data-nosnippet>1623</a>    <span class="attr">#[tokio::test]
 <a href=#1624 id=1624 data-nosnippet>1624</a>    </span><span class="kw">async fn </span>test_nan_val_cnts_primitive_type() -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
 <a href=#1625 id=1625 data-nosnippet>1625</a>        <span class="kw">let </span>temp_dir = TempDir::new().unwrap();
-<a href=#1626 id=1626 data-nosnippet>1626</a>        <span class="kw">let </span>file_io = FileIOBuilder::new_fs_io().build().unwrap();
+<a href=#1626 id=1626 data-nosnippet>1626</a>        <span class="kw">let </span>file_io = FileIO::new_with_fs();
 <a href=#1627 id=1627 data-nosnippet>1627</a>        <span class="kw">let </span>location_gen = DefaultLocationGenerator::with_data_location(
 <a href=#1628 id=1628 data-nosnippet>1628</a>            temp_dir.path().to_str().unwrap().to_string(),
 <a href=#1629 id=1629 data-nosnippet>1629</a>        );
@@ -1711,7 +1711,7 @@
 <a href=#1711 id=1711 data-nosnippet>1711</a>    <span class="attr">#[tokio::test]
 <a href=#1712 id=1712 data-nosnippet>1712</a>    </span><span class="kw">async fn </span>test_nan_val_cnts_struct_type() -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
 <a href=#1713 id=1713 data-nosnippet>1713</a>        <span class="kw">let </span>temp_dir = TempDir::new().unwrap();
-<a href=#1714 id=1714 data-nosnippet>1714</a>        <span class="kw">let </span>file_io = FileIOBuilder::new_fs_io().build().unwrap();
+<a href=#1714 id=1714 data-nosnippet>1714</a>        <span class="kw">let </span>file_io = FileIO::new_with_fs();
 <a href=#1715 id=1715 data-nosnippet>1715</a>        <span class="kw">let </span>location_gen = DefaultLocationGenerator::with_data_location(
 <a href=#1716 id=1716 data-nosnippet>1716</a>            temp_dir.path().to_str().unwrap().to_string(),
 <a href=#1717 id=1717 data-nosnippet>1717</a>        );
@@ -1851,7 +1851,7 @@
 <a href=#1851 id=1851 data-nosnippet>1851</a>    <span class="attr">#[tokio::test]
 <a href=#1852 id=1852 data-nosnippet>1852</a>    </span><span class="kw">async fn </span>test_nan_val_cnts_list_type() -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
 <a href=#1853 id=1853 data-nosnippet>1853</a>        <span class="kw">let </span>temp_dir = TempDir::new().unwrap();
-<a href=#1854 id=1854 data-nosnippet>1854</a>        <span class="kw">let </span>file_io = FileIOBuilder::new_fs_io().build().unwrap();
+<a href=#1854 id=1854 data-nosnippet>1854</a>        <span class="kw">let </span>file_io = FileIO::new_with_fs();
 <a href=#1855 id=1855 data-nosnippet>1855</a>        <span class="kw">let </span>location_gen = DefaultLocationGenerator::with_data_location(
 <a href=#1856 id=1856 data-nosnippet>1856</a>            temp_dir.path().to_str().unwrap().to_string(),
 <a href=#1857 id=1857 data-nosnippet>1857</a>        );
@@ -2053,7 +2053,7 @@
 <a href=#2053 id=2053 data-nosnippet>2053</a>    <span class="attr">#[tokio::test]
 <a href=#2054 id=2054 data-nosnippet>2054</a>    </span><span class="kw">async fn </span>test_nan_val_cnts_map_type() -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
 <a href=#2055 id=2055 data-nosnippet>2055</a>        <span class="kw">let </span>temp_dir = TempDir::new().unwrap();
-<a href=#2056 id=2056 data-nosnippet>2056</a>        <span class="kw">let </span>file_io = FileIOBuilder::new_fs_io().build().unwrap();
+<a href=#2056 id=2056 data-nosnippet>2056</a>        <span class="kw">let </span>file_io = FileIO::new_with_fs();
 <a href=#2057 id=2057 data-nosnippet>2057</a>        <span class="kw">let </span>location_gen = DefaultLocationGenerator::with_data_location(
 <a href=#2058 id=2058 data-nosnippet>2058</a>            temp_dir.path().to_str().unwrap().to_string(),
 <a href=#2059 id=2059 data-nosnippet>2059</a>        );
@@ -2209,7 +2209,7 @@
 <a href=#2209 id=2209 data-nosnippet>2209</a>    <span class="attr">#[tokio::test]
 <a href=#2210 id=2210 data-nosnippet>2210</a>    </span><span class="kw">async fn </span>test_write_empty_parquet_file() {
 <a href=#2211 id=2211 data-nosnippet>2211</a>        <span class="kw">let </span>temp_dir = TempDir::new().unwrap();
-<a href=#2212 id=2212 data-nosnippet>2212</a>        <span class="kw">let </span>file_io = FileIOBuilder::new_fs_io().build().unwrap();
+<a href=#2212 id=2212 data-nosnippet>2212</a>        <span class="kw">let </span>file_io = FileIO::new_with_fs();
 <a href=#2213 id=2213 data-nosnippet>2213</a>        <span class="kw">let </span>location_gen = DefaultLocationGenerator::with_data_location(
 <a href=#2214 id=2214 data-nosnippet>2214</a>            temp_dir.path().to_str().unwrap().to_string(),
 <a href=#2215 id=2215 data-nosnippet>2215</a>        );
@@ -2279,4 +2279,5 @@
 <a href=#2279 id=2279 data-nosnippet>2279</a>        <span class="macro">assert_eq!</span>(lower_bounds, HashMap::from([(<span class="number">0</span>, Datum::int(i32::MIN))]));
 <a href=#2280 id=2280 data-nosnippet>2280</a>        <span class="macro">assert_eq!</span>(upper_bounds, HashMap::from([(<span class="number">0</span>, Datum::int(i32::MAX))]));
 <a href=#2281 id=2281 data-nosnippet>2281</a>    }
-<a href=#2282 id=2282 data-nosnippet>2282</a>}</code></pre></div></section></main></body></html>
+<a href=#2282 id=2282 data-nosnippet>2282</a>}
+</code></pre></div></section></main></body></html>
