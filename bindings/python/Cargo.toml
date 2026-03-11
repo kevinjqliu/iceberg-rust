@@ -37,6 +37,7 @@ iceberg-storage-opendal = { path = "../../crates/storage/opendal", features = ["
 pyo3 = { version = "0.26", features = ["extension-module", "abi3-py310"] }
 iceberg-datafusion = { path = "../../crates/integrations/datafusion" }
 datafusion-ffi = { version = "52.1" }
+datafusion-python-util = { git = "https://github.com/apache/datafusion-python.git", rev = "0be1501a4422122f98b1e06424f696be3ef21ff1", package = "datafusion-python-util" }
 tokio = { version = "1.46.1", default-features = false }
 
 [profile.release]
