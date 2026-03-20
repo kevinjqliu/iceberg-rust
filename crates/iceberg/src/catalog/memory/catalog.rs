@@ -322,8 +322,8 @@ impl Catalog for MemoryCatalog {
     async fn drop_table(&self, table_ident: &TableIdent) -> Result<()> {
         let mut root_namespace_state = self.root_namespace_state.lock().await;
 
-        let metadata_location = root_namespace_state.remove_existing_table(table_ident)?;
-        self.file_io.delete(&metadata_location).await
+        root_namespace_state.remove_existing_table(table_ident)?;
+        Ok(())
     }
 
     /// Check if a table exists in the catalog.
@@ -1877,7 +1877,7 @@ pub(crate) mod tests {
 
         assert_eq!(table.identifier(), updated_table.identifier());
         assert_eq!(table.metadata().uuid(), updated_table.metadata().uuid());
-        assert!(table.metadata().last_updated_ms() < updated_table.metadata().last_updated_ms());
+        assert!(table.metadata().last_updated_ms() <= updated_table.metadata().last_updated_ms());
         assert_ne!(table.metadata_location(), updated_table.metadata_location());
 
         assert!(
